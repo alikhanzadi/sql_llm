@@ -1,0 +1,37 @@
+ai-analytics-assistant/
+│
+├── airflow/ #NOT IMPLEMENTED YET
+│   └── dags/
+│       └── pipeline_dag.py
+│
+├── dbt/ #NOT IMPLEMENTED YET
+│   ├── models/
+│   │   ├── staging/
+│   │   ├── marts/
+│   │   └── metrics/
+│
+├── app/
+│   ├── main.py              # entry point
+│   ├── schema.py              # entry point
+│   ├── logger.py              # entry point
+│   ├── llm/
+│   │   ├── generate_sql.py
+│   │   ├── prompts.py
+│   │   ├── explain_results.py #NOT IMPLEMENTED YET
+│   │
+│   ├── rag/ #NOT IMPLEMENTED YET
+│   │   ├── embeddings.py
+│   │   ├── vector_store.py
+│   │   └── context_builder.py
+│   │
+│   ├── db/
+│   │   └── query_runner.py
+│   │   └── validator.py
+│
+├── data/
+│   └── sample_data.csv
+│
+├── docker-compose.yml
+├── .env
+├── requirements.txt
+└── README.md
