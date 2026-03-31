@@ -1,0 +1,17 @@
+[
+  {
+    "table": "users",
+    "description": "Stores user account information",
+    "columns": ["user_id", "signup_date"]
+  },
+  {
+    "table": "athletes",
+    "description": "Stores athlete profiles",
+    "columns": ["athlete_id", "name", "sport", "team"]
+  },
+  {
+    "table": "trades",
+    "description": "Records all trades made by users for athletes",
+    "columns": ["trade_id", "user_id", "athlete_id", "amount", "created_at"]
+  }
+]

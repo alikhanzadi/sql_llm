@@ -4,7 +4,7 @@ docker ps ##show containers
 
 start postgres docker
 docker exec -it ai_postgres psql -U admin -d analytics_db
-
+Once started you will see "analytics_db=# ". This is postgres running.
 
 List all running containers with their names:
 docker ps
@@ -19,7 +19,8 @@ docker ps -a --format "{{.Names}}"
 
 
 \conninfo ##connection info --> You are connected to database "analytics_db" as user "admin" via socket in "/var/run/postgresql" at port "5432".
-\dt ##list tables
+\dt ##list tables 
+SELECT * FROM INFORMATION_SCHEMA.TABLES;
 SHOW search_path; ##which schema I am in -->  "$user", public
 \q ## quit
 
@@ -77,6 +78,14 @@ git branch -M main
 git remote add origin git@github.com:alikhanzadi/sql_llm.git
 git push -u origin main
 
+# Untrack a file (removing it from git history - when you added a file but later decide not to include it and want to remove it)
+git rm --cached .env
+
+#Remove Git completely
+rm -rf .git 
+
+Git STATUS
+
 
 
 SSH
@@ -101,3 +110,4 @@ Make sure the keys (pub + the other ones) are placed in ~/.ssh
 4. Verify and Push
 ssh -T git@github.com
 You should see: "Hi [YourUsername]! You've successfully authenticated..." 
+

@@ -16,7 +16,7 @@ def validate_sql(sql: str) -> bool:
     return True
 
 
-def enforce_limit(sql: str, limit: int = 100) -> str:
+def enforce_limit(sql: str, limit: int = 10) -> str:
     if "limit" not in sql.lower():
         sql = sql.rstrip(";") + f" LIMIT {limit};"
     return sql

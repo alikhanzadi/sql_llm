@@ -55,3 +55,218 @@ FROM trades
 GROUP BY DATE(trade_date) LIMIT 100;
 2026-03-26 19:18:56,791 - RESULT: [RealDictRow([('total_trades', 124), ('sign_up_date', datetime.date(2025, 11, 24))]), RealDictRow([('total_trades', 133), ('sign_up_date', datetime.date(2025, 2, 16))]), RealDictRow([('total_trades', 
 2026-03-26 19:18:56,791 - ----
+2026-03-27 12:03:41,339 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 12:03:41,369 - QUESTION: “trades by signup date”
+2026-03-27 12:03:41,370 - SQL: SELECT t.trade_id, t.user_id, t.token_id, t.trade_date, t.quantity, t.price
+FROM trades t LIMIT 100;
+2026-03-27 12:03:41,370 - RESULT: [RealDictRow([('trade_id', 1), ('user_id', 1578), ('token_id', 24), ('trade_date', datetime.date(2025, 10, 13)), ('quantity', 1), ('price', Decimal('12.29'))]), RealDictRow([('trade_id', 2), ('user_id
+2026-03-27 12:03:41,370 - ----
+2026-03-27 12:20:28,949 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 12:20:28,982 - QUESTION: total trades by signup date
+2026-03-27 12:20:28,982 - SQL: SELECT COUNT(trade_id) AS total_trades, DATE(trade_date) AS signup_date
+FROM trades
+GROUP BY DATE(trade_date) LIMIT 100;
+2026-03-27 12:20:28,982 - RESULT: [RealDictRow([('total_trades', 124), ('signup_date', datetime.date(2025, 11, 24))]), RealDictRow([('total_trades', 133), ('signup_date', datetime.date(2025, 2, 16))]), RealDictRow([('total_trades', 12
+2026-03-27 12:20:28,982 - ----
+2026-03-27 12:36:29,312 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 12:36:29,350 - QUESTION: total trades (count) by signup date
+2026-03-27 12:36:29,350 - SQL: SELECT u.signup_date, COUNT(*) AS total_trades
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 100;
+2026-03-27 12:36:29,350 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('total_trades', 67)]), RealDictRow([('signup_date', datetime.date(2025, 2, 16)), ('total_trades', 141)]), RealDictRow([('signup_date', date
+2026-03-27 12:36:29,350 - ----
+2026-03-27 13:26:20,079 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 13:26:20,114 - QUESTION: how many customers did trade
+2026-03-27 13:26:20,114 - SQL: SELECT COUNT(DISTINCT user_id) AS total_customers
+FROM trades LIMIT 100;
+2026-03-27 13:26:20,114 - RESULT: [RealDictRow([('total_customers', 2000)])]
+2026-03-27 13:26:20,114 - ----
+2026-03-27 13:41:30,238 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 13:41:30,280 - QUESTION: trades per region
+2026-03-27 13:41:30,280 - SQL: SELECT u.region, COUNT(*) AS trades_per_region
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.region LIMIT 100;
+2026-03-27 13:41:30,280 - RESULT: [RealDictRow([('region', 'South'), ('trades_per_region', 12337)]), RealDictRow([('region', 'West'), ('trades_per_region', 12272)]), RealDictRow([('region', 'North'), ('trades_per_region', 13071)]), Re
+2026-03-27 13:41:30,280 - ----
+2026-03-27 13:41:32,505 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 17:41:23,778 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-27 17:41:23,811 - QUESTION: trades per region
+2026-03-27 17:41:23,811 - SQL: SELECT u.region, COUNT(*) AS trades_per_region
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.region LIMIT 100;
+2026-03-27 17:41:23,812 - RESULT: [RealDictRow([('region', 'South'), ('trades_per_region', 12337)]), RealDictRow([('region', 'West'), ('trades_per_region', 12272)]), RealDictRow([('region', 'North'), ('trades_per_region', 13071)]), Re
+2026-03-27 17:41:23,812 - ----
+2026-03-27 17:41:26,446 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 14:51:56,907 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 14:51:56,942 - QUESTION: trades by signup date
+2026-03-28 14:51:56,942 - SQL: SELECT u.signup_date, COUNT(*) AS total_trades
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 100;
+2026-03-28 14:51:56,943 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('total_trades', 67)]), RealDictRow([('signup_date', datetime.date(2025, 2, 16)), ('total_trades', 141)]), RealDictRow([('signup_date', date
+2026-03-28 14:51:56,943 - ----
+2026-03-28 14:52:00,371 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 16:53:13,325 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 16:53:13,369 - QUESTION: trades by signup date
+2026-03-28 16:53:13,369 - SQL: SELECT u.signup_date, COUNT(*) AS total_trades
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 100;
+2026-03-28 16:53:13,369 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('total_trades', 67)]), RealDictRow([('signup_date', datetime.date(2025, 2, 16)), ('total_trades', 141)]), RealDictRow([('signup_date', date
+2026-03-28 16:53:13,369 - ----
+2026-03-28 16:53:16,266 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 16:53:24,812 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 16:53:24,846 - QUESTION: trades by signup date
+2026-03-28 16:53:24,846 - SQL: SELECT u.signup_date, COUNT(*) AS total_trades
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 100;
+2026-03-28 16:53:24,846 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('total_trades', 67)]), RealDictRow([('signup_date', datetime.date(2025, 2, 16)), ('total_trades', 141)]), RealDictRow([('signup_date', date
+2026-03-28 16:53:24,846 - ----
+2026-03-28 16:53:27,035 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 16:55:51,304 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 16:55:51,337 - QUESTION: trades by signup date
+2026-03-28 16:55:51,338 - SQL: SELECT u.signup_date, COUNT(*) AS trades_count
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 100;
+2026-03-28 16:55:51,338 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('trades_count', 67)]), RealDictRow([('signup_date', datetime.date(2025, 2, 16)), ('trades_count', 141)]), RealDictRow([('signup_date', date
+2026-03-28 16:55:51,338 - ----
+2026-03-28 16:55:53,604 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 18:59:47,514 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 18:59:47,552 - QUESTION:  trades by signup date
+2026-03-28 18:59:47,552 - SQL: SELECT u.signup_date, COUNT(*) AS total_trades
+FROM trades t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 100;
+2026-03-28 18:59:47,553 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('total_trades', 67)]), RealDictRow([('signup_date', datetime.date(2025, 2, 16)), ('total_trades', 141)]), RealDictRow([('signup_date', date
+2026-03-28 18:59:47,553 - ----
+2026-03-28 18:59:50,947 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 22:33:30,075 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 22:33:30,111 - QUESTION: average trades per user
+2026-03-28 22:33:30,111 - SQL: SELECT u.user_id, COUNT(t.trade_id) AS trade_count
+FROM users u
+LEFT JOIN trades t ON u.user_id = t.user_id
+GROUP BY u.user_id LIMIT 100;
+2026-03-28 22:33:30,111 - RESULT: [RealDictRow([('user_id', 1798), ('trade_count', 27)]), RealDictRow([('user_id', 1489), ('trade_count', 26)]), RealDictRow([('user_id', 1269), ('trade_count', 26)]), RealDictRow([('user_id', 652), ('t
+2026-03-28 22:33:30,111 - ----
+2026-03-28 22:33:33,084 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 22:33:44,049 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 22:33:44,080 - QUESTION: average trades per user
+2026-03-28 22:33:44,080 - SQL: SELECT u.user_id, COUNT(t.trade_id) AS trade_count
+FROM users u
+LEFT JOIN trades t ON u.user_id = t.user_id
+GROUP BY u.user_id LIMIT 100;
+2026-03-28 22:33:44,080 - RESULT: [RealDictRow([('user_id', 1798), ('trade_count', 27)]), RealDictRow([('user_id', 1489), ('trade_count', 26)]), RealDictRow([('user_id', 1269), ('trade_count', 26)]), RealDictRow([('user_id', 652), ('t
+2026-03-28 22:33:44,080 - ----
+2026-03-28 22:33:46,092 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 22:39:10,403 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-28 22:39:10,435 - QUESTION: average trades per user
+2026-03-28 22:39:10,435 - SQL: SELECT AVG(trade_count) AS average_trades_per_user
+FROM (
+    SELECT user_id, COUNT(*) AS trade_count
+    FROM trades
+    GROUP BY user_id
+) AS user_trades LIMIT 100;
+2026-03-28 22:39:10,435 - RESULT: [RealDictRow([('average_trades_per_user', Decimal('25.0000000000000000'))])]
+2026-03-28 22:39:10,435 - ----
+2026-03-28 22:39:11,731 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 00:55:03,702 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 00:55:03,730 - QUESTION: average trade per user
+2026-03-29 00:55:03,730 - SQL: SELECT AVG(trade_count) AS average_trades_per_user
+FROM (
+    SELECT user_id, COUNT(*) AS trade_count
+    FROM trades
+    GROUP BY user_id
+) t LIMIT 100;
+2026-03-29 00:55:03,730 - RESULT: [RealDictRow([('average_trades_per_user', Decimal('25.0000000000000000'))])]
+2026-03-29 00:55:03,730 - ----
+2026-03-29 00:55:05,625 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:30:48,089 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:30:48,112 - QUESTION: how many users signed up per day
+2026-03-29 15:30:48,112 - SQL: SELECT u.signup_date, COUNT(*) AS users_signed_up
+FROM users u
+GROUP BY u.signup_date LIMIT 100;
+2026-03-29 15:30:48,112 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('users_signed_up', 3)]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('users_signed_up', 3)]), RealDictRow([('signup_date', d
+2026-03-29 15:30:48,112 - ----
+2026-03-29 15:30:52,668 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:35:16,661 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:35:16,681 - QUESTION: how many users signed up per day
+2026-03-29 15:35:16,681 - SQL: SELECT u.signup_date, COUNT(*) AS users_signed_up
+FROM users u
+GROUP BY u.signup_date LIMIT 100;
+2026-03-29 15:35:16,681 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('users_signed_up', 3)]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('users_signed_up', 3)]), RealDictRow([('signup_date', d
+2026-03-29 15:35:16,681 - ----
+2026-03-29 15:35:19,118 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:35:20,465 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 15:51:13,194 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:51:13,218 - QUESTION: 
+2026-03-29 15:51:13,218 - SQL: SELECT * FROM athletes LIMIT 10;
+2026-03-29 15:51:13,218 - RESULT: [RealDictRow([('athlete_id', 1), ('name', 'Athlete_1'), ('sport', 'Football'), ('team', 'Team_2')]), RealDictRow([('athlete_id', 2), ('name', 'Athlete_2'), ('sport', 'Soccer'), ('team', 'Team_5')]), R
+2026-03-29 15:51:13,218 - ----
+2026-03-29 15:51:15,757 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 15:51:16,328 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 17:56:24,304 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 17:56:24,324 - QUESTION: how many users signed up per day
+2026-03-29 17:56:24,325 - SQL: SELECT u.signup_date, COUNT(*) AS users_signed_up
+FROM users u
+GROUP BY u.signup_date LIMIT 10;
+2026-03-29 17:56:24,325 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('users_signed_up', 3)]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('users_signed_up', 3)]), RealDictRow([('signup_date', d
+2026-03-29 17:56:24,325 - ----
+2026-03-29 17:56:26,679 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 17:56:27,838 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 19:00:41,753 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 19:00:41,772 - QUESTION: how many users signed up per day
+2026-03-29 19:00:41,773 - SQL: SELECT u.signup_date, COUNT(*) AS users_signed_up
+FROM users u
+GROUP BY u.signup_date LIMIT 10;
+2026-03-29 19:00:41,773 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('users_signed_up', 3)]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('users_signed_up', 3)]), RealDictRow([('signup_date', d
+2026-03-29 19:00:41,773 - ----
+2026-03-29 19:00:44,793 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 19:00:46,204 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 22:24:24,184 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 22:24:25,351 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 22:24:40,003 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 22:24:40,023 - QUESTION: how many users signed up per day 
+2026-03-29 22:24:40,023 - SQL: SELECT u.signup_date, COUNT(*) AS users_signed_up
+FROM users u
+GROUP BY u.signup_date LIMIT 10;
+2026-03-29 22:24:40,023 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('users_signed_up', 3)]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('users_signed_up', 3)]), RealDictRow([('signup_date', d
+2026-03-29 22:24:40,023 - ----
+2026-03-29 22:24:43,061 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 22:26:09,456 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 22:26:10,460 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 22:26:43,971 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 22:26:43,989 - QUESTION: how many users signed up per day how many users signed up per day on average
+2026-03-29 22:26:43,989 - SQL: SELECT signup_date, COUNT(*) AS users_signed_up
+FROM users
+GROUP BY signup_date; 
+
+SELECT AVG(daily_user_count) AS average_users_signed_up_per_day
+FROM (
+    SELECT signup_date, COUNT(*) AS daily_user_count
+    FROM users
+    GROUP BY signup_date
+) subquery LIMIT 10;
+2026-03-29 22:26:43,989 - RESULT: [RealDictRow([('average_users_signed_up_per_day', Decimal('5.4945054945054945'))])]
+2026-03-29 22:26:43,989 - ----
+2026-03-29 22:26:45,599 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-29 22:41:17,557 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-29 22:41:18,493 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-30 19:25:45,018 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-30 19:25:45,872 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-30 19:26:01,710 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-30 19:26:05,597 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-30 19:26:05,652 - QUESTION: average trades per user
+2026-03-30 19:26:05,652 - SQL: SELECT AVG(trade_count) AS average_trades_per_user
+FROM (
+    SELECT user_id, COUNT(*) AS trade_count
+    FROM trades
+    GROUP BY user_id
+) t LIMIT 10;
+2026-03-30 19:26:05,652 - RESULT: [RealDictRow([('average_trades_per_user', Decimal('25.0000000000000000'))])]
+2026-03-30 19:26:05,652 - ----
+2026-03-30 19:26:07,330 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
