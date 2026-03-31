@@ -49,25 +49,10 @@ Run: python app/db/query_runner.py
 
 Run: python -m app.main ## to see app (the folder) as a package - imports stuff from app folder
 
-packages:
-pip install \
-openai \
-python-dotenv \
-psycopg2-binary \
-sqlalchemy \
-pandas \
-numpy \
-dbt-postgres \
-chromadb \
-sentence-transformers \
-tiktoken \
-fastapi \
-uvicorn \
-ipython \
-rich
 
 
 
+GIT --------------------------------------------------------------------
 
 For Github
 echo "# sql_llm" >> README.md
@@ -88,7 +73,7 @@ Git STATUS
 
 
 
-SSH
+SSH --------------------------------------------------------------------
 1. Check for existing SSH
 ls -al ~/.ssh
 2. Generate a new SSH key 

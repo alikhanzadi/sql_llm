@@ -25,42 +25,42 @@ from app.cache import (
 
 def main():
 
-    # =========================
-    # 🔴 TEMP BLOCK — SETUP
-    # =========================
-    # WHY:
-    # - Run ONCE to store schema embeddings in Chroma
-    # - Required before retrieval works
-    # - DELETE after first successful run
+    # # =========================
+    # # 🔴 TEMP BLOCK — SETUP
+    # # =========================
+    # # WHY:
+    # # - Run ONCE to store schema embeddings in Chroma
+    # # - Required before retrieval works
+    # # - DELETE after first successful run
 
-    docs = load_schema_docs()
-    embedded_docs = generate_embeddings(docs)
+    # docs = load_schema_docs()
+    # embedded_docs = generate_embeddings(docs)
 
-    collection = get_collection()
-    store_embeddings(collection, embedded_docs)
+    # collection = get_collection()
+    # store_embeddings(collection, embedded_docs)
 
-    print("Stored embeddings.")
+    # print("Stored embeddings.")
 
-    # =========================
-    # 🔴 TEMP BLOCK — TEST RAG
-    # =========================
-    # WHY:
-    # - Validate embeddings + vector DB + similarity search
-    # - Ensures system retrieves correct tables
-    # - DELETE after confirmed
+    # # =========================
+    # # 🔴 TEMP BLOCK — TEST RAG
+    # # =========================
+    # # WHY:
+    # # - Validate embeddings + vector DB + similarity search
+    # # - Ensures system retrieves correct tables
+    # # - DELETE after confirmed
 
-    client = OpenAI()
+    # client = OpenAI()
 
-    query = "average trades per user"
+    # query = "average trades per user"
 
-    q_embed = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=query
-    ).data[0].embedding
+    # q_embed = client.embeddings.create(
+    #     model="text-embedding-3-small",
+    #     input=query
+    # ).data[0].embedding
 
-    results = query_collection(collection, q_embed)
+    # results = query_collection(collection, q_embed)
 
-    print("\nRAG TEST RESULTS:\n", results["documents"])
+    # print("\nRAG TEST RESULTS:\n", results["documents"])
 
     # =========================
     # ✅ ACTUAL APP FLOW
