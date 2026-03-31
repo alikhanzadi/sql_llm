@@ -1,19 +1,23 @@
-
 from dotenv import load_dotenv
 load_dotenv()
 
 from openai import OpenAI
 
 from app.llm.generate_sql import generate_sql
+
 from app.db.query_runner import PostgresClient
 from app.db.validator import validate_sql, enforce_limit
+
 from app.logger import log_query
 
 from app.llm.explain_results import explain_results
 from app.llm.generate_sql import fix_sql
 
-from app.rag.embeddings import load_schema_docs, generate_embeddings
-from app.rag.vector_store import get_collection, store_embeddings, query_collection
+# For the TEMP parts
+# from app.rag.embeddings import load_schema_docs, generate_embeddings
+# from app.rag.vector_store import get_collection, store_embeddings, query_collection
+from app.rag.retriever import retrieve_relevant_docs
+from app.rag.context_builder import build_context
 
 from app.cache import (
     get_cached_sql,
@@ -68,6 +72,10 @@ def main():
 
     user_input = input("Ask a question: ")
 
+    # ✅ ADDED (Day 16 — retrieve context ONCE and reuse)
+    docs = retrieve_relevant_docs(user_input)
+    context = build_context(docs)
+
     cache_key = user_input.strip().lower()
     sql = get_cached_sql(cache_key)
 
@@ -96,8 +104,11 @@ def main():
         if isinstance(result, dict) and "error" in result:
             print("\nRetrying with fixed SQL...\n")
 
-            fixed_sql = fix_sql(user_input, sql, result["error"])
+            # 🔴 CHANGED (pass context into fix_sql)
+            fixed_sql = fix_sql(user_input, sql, result["error"], context)
             print("Fixed SQL:\n", fixed_sql)
+            # fixed_sql = fix_sql(user_input, sql, result["error"])
+            # print("Fixed SQL:\n", fixed_sql)
 
             result = get_cached_result(fixed_sql)
             if not result:
@@ -115,7 +126,7 @@ def main():
 
     if isinstance(result, list):
         print("\nRows returned:", len(result))
-        print("\nSQL:\n")
+        print("\nSQL:\n", sql)
         print("\nResult:\n", result)
 
         explanation = explain_results(user_input, sql, result)

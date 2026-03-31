@@ -270,3 +270,45 @@ FROM (
 2026-03-30 19:26:05,652 - RESULT: [RealDictRow([('average_trades_per_user', Decimal('25.0000000000000000'))])]
 2026-03-30 19:26:05,652 - ----
 2026-03-30 19:26:07,330 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-30 23:01:22,442 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-30 23:01:24,390 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-30 23:01:24,444 - QUESTION: "average trades per user"
+2026-03-30 23:01:24,444 - SQL: SELECT AVG(trade_count) AS average_trades_per_user
+FROM (
+    SELECT user_id, COUNT(*) AS trade_count
+    FROM trades
+    GROUP BY user_id
+) t LIMIT 10;
+2026-03-30 23:01:24,444 - RESULT: [RealDictRow([('average_trades_per_user', Decimal('25.0000000000000000'))])]
+2026-03-30 23:01:24,444 - ----
+2026-03-30 23:01:26,379 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-31 04:14:27,404 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-31 04:14:28,297 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-31 04:14:31,191 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-31 04:14:31,241 - QUESTION: average trades per user by signup date
+2026-03-31 04:14:31,241 - SQL: SELECT u.signup_date, AVG(trade_count) AS average_trades_per_user
+FROM (
+    SELECT user_id, COUNT(*) AS trade_count
+    FROM trades
+    GROUP BY user_id
+) t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 10;
+2026-03-31 04:14:31,241 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('average_trades_per_user', Decimal('22.3333333333333333'))]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('average_trades_pe
+2026-03-31 04:14:31,241 - ----
+2026-03-31 04:14:34,673 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-31 13:07:52,045 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-31 13:07:52,882 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-03-31 13:07:55,202 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-03-31 13:07:55,263 - QUESTION: average trades per user by signup date
+2026-03-31 13:07:55,263 - SQL: SELECT u.signup_date, AVG(trade_count) AS average_trades_per_user
+FROM (
+    SELECT user_id, COUNT(*) AS trade_count
+    FROM trades
+    GROUP BY user_id
+) t
+JOIN users u ON t.user_id = u.user_id
+GROUP BY u.signup_date LIMIT 10;
+2026-03-31 13:07:55,263 - RESULT: [RealDictRow([('signup_date', datetime.date(2025, 11, 24)), ('average_trades_per_user', Decimal('22.3333333333333333'))]), RealDictRow([('signup_date', datetime.date(2025, 3, 31)), ('average_trades_pe
+2026-03-31 13:07:55,263 - ----
+2026-03-31 13:07:58,997 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

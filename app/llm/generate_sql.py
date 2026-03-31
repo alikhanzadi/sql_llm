@@ -178,9 +178,13 @@ def generate_sql(user_query: str) -> str:
 
     return cleaned_sql
 
-def fix_sql(user_query: str, sql: str, error: str) -> str:
+# def fix_sql(user_query: str, sql: str, error: str) -> str:
+def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
     prompt = f"""
 The following SQL query failed.
+
+Relevant Database Schema:
+{context}
 
 User Question:
 {user_query}
