@@ -1,8 +1,15 @@
+
+import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 
-from app.llm.generate_sql import generate_sql, fix_sql
 from app.db.query_runner import PostgresClient
 from app.db.validator import validate_sql, enforce_limit
+
+from app.llm.generate_sql import generate_sql, fix_sql
 from app.llm.explain_results import explain_results
 
 from app.rag.retriever import retrieve_relevant_docs
