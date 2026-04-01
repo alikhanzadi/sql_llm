@@ -8,6 +8,11 @@ from app.llm.explain_results import explain_results
 from app.rag.retriever import retrieve_relevant_docs
 from app.rag.context_builder import build_context
 
+try:
+    client = PostgresClient()
+    result = client.run_query(sql)
+except Exception:
+    result = [{"message": "Demo mode (no DB connection)"}]
 
 # -------------------------
 # Session State (History)
