@@ -1,6 +1,7 @@
 streamlit
 openai
-chromadb
+chromadb==0.5.5
+protobuf==4.25.3
 psycopg2-binary
 python-dotenv
 
