@@ -39,7 +39,7 @@ LLM layer
 RAG layer
 Data pipeline layer (Airflow + dbt)
 
-
+------------------------------------------------------------------------
 Phase 2 Summary (Day 13 → Day 15): Keyword-based schema selection ➝ semantic retrieval (RAG)
 OVERVIEW - Replaced keyword-based schema filtering with semantic
 retrieval (RAG) - System now retrieves relevant tables using embeddings
@@ -56,8 +56,7 @@ Day 15 — Retrieval Pipeline - Replace keyword filtering with semantic retrieva
         * Build context from retrieved docs
         * Inject into LLM prompt (replacing schema filtering)    
 
-------------------------------------------------------------------------
-
+-------------------
 embeddings.load_schema_docs()
 Loads schema metadata from JSON file. LLM cannot understand raw DB → needs descriptions.
 
@@ -73,6 +72,8 @@ Converts each formatted doc → embedding vector (text → embedding vectors) --
 Output
 [(text, embedding_vector)]
 
+load_schema_docs() → schema_docs.json → format_doc() → embeddings
+-------------------
 vector_store.get_collection():
 Creates/loads Chroma collectionm --> Logical container for embeddings
 
@@ -87,20 +88,20 @@ Output
 {
   "documents": [[doc1, doc2]]
 }
-
+-------------------
 retriever.retrieve_relevant_docs(question):
 Embeds user question → Calls query_collection() → Returns top relevant schema docs --> Encapsulates retrieval logic (clean separation)
-
+-------------------
 context_builder.build_context(docs):
 Combines retrieved docs into prompt text --> LLM needs structured, readable context
 Output
         Relevant Database Schema:
         Table: trades ...
         Table: users ...
-
+-------------------
 generate_sql.generate_sql(user_query):
 Calls retriever → Builds context → Sends to LLM → Returns SQL --> Final step: converts NL → SQL using retrieved schema
-
+-------------------
 User Question
    ↓
 retrieve_relevant_docs()
@@ -120,8 +121,6 @@ generate_sql()
 LLM
    ↓
 SQL Query
-
-
 
 ------------------------------------------------------------------------
 

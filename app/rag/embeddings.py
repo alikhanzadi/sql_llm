@@ -12,6 +12,14 @@ def load_schema_docs(path="data/schema_docs.json"):
 
 
 def format_doc(doc):
+    # NEW: handle metrics
+    if doc.get("type") == "metric":
+        return f"""
+        Metric: {doc['name']}
+        Definition: {doc['definition']}
+        """
+
+    # existing behavior (tables)
     return f"""
     Table: {doc['table']}
     Description: {doc['description']}
@@ -30,3 +38,4 @@ def generate_embeddings(docs):
     embeddings = [e.embedding for e in response.data]
 
     return list(zip(texts, embeddings))
+

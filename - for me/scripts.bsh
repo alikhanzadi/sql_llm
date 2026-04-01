@@ -73,6 +73,8 @@ Git STATUS
 
 
 
+
+
 SSH --------------------------------------------------------------------
 1. Check for existing SSH
 ls -al ~/.ssh
@@ -96,3 +98,28 @@ Make sure the keys (pub + the other ones) are placed in ~/.ssh
 ssh -T git@github.com
 You should see: "Hi [YourUsername]! You've successfully authenticated..." 
 
+Troubleshooting:
+Test Connection:
+ssh -T git@github.com
+    If you see: "Hi [YourUsername]! You've successfully authenticated...", your SSH is working. 
+
+Start the SSH agent in the background:
+eval "$(ssh-agent -s)"
+
+Add your private key to the agent (replace id_ed25519 with id_rsa if that is what you use):
+ssh-add ~/.ssh/id_ed25519
+
+To avoid type the passphrase for key '/Users/alikhanzadi/.ssh/id_ed25519':
+Add it to the agent with the "Apple" flag:
+ssh-add --apple-use-keychain ~/.ssh/id_ed25519
+
+Update your config file to keep it that way:
+Open nano ~/.ssh/config and add these lines:
+Host github.com
+  AddKeysToAgent yes
+  UseKeychain yes
+  IdentityFile ~/.ssh/id_ed25519
+
+
+
+  --------------------------------------------------------------------
