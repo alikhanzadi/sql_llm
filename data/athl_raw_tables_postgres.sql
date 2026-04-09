@@ -96,7 +96,49 @@ CREATE TABLE IF NOT EXISTS creator_profile (
   CONSTRAINT fk_creator_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id),
   CONSTRAINT fk_creator_user FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+-- =========================================================
+-- IDENTITY & SOCIAL VERIFICATION
+-- =========================================================
+CREATE TABLE IF NOT EXISTS identity_verification (
+  identity_check_id  VARCHAR(36) PRIMARY KEY,
+  issuer_id          VARCHAR(36),
+  provider           TEXT,                      -- e.g., 'Persona','Onfido'
+  status             TEXT,                      -- 'INITIATED','PENDING','PASSED','FAILED','MANUAL_REVIEW'
+  level              TEXT,                      -- optional verification level
+  alias_confidence   NUMERIC(5,2),              -- 0-100
+  opted_in           BOOLEAN,
+  initiated_at       TIMESTAMPTZ,
+  completed_at       TIMESTAMPTZ,
+  failure_reason     TEXT,
+  raw_response       JSONB,
+  CONSTRAINT fk_identity_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
+);
 
+CREATE TABLE IF NOT EXISTS social_verification (
+  social_verif_id    VARCHAR(36) PRIMARY KEY,
+  issuer_id          VARCHAR(36),
+  platform           TEXT,                      -- 'YOUTUBE','TIKTOK','INSTAGRAM','TWITCH','X','FACEBOOK'
+  handle             TEXT,
+  followers_count    NUMERIC(38,0),
+  -- verified           BOOLEAN,
+  initiated_at       TIMESTAMPTZ,
+  completed_at       TIMESTAMPTZ,
+  attempts           NUMERIC(38,0),
+  status             TEXT,                      -- 'SUCCESS','FAILED','PENDING'
+  metadata           JSONB,
+  CONSTRAINT fk_socialverif_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
+);
+
+CREATE TABLE IF NOT EXISTS social_media_auth_fail (
+  auth_fail_id       VARCHAR(36) PRIMARY KEY,
+  issuer_id          VARCHAR(36),
+  platform           TEXT,
+  failed_at          TIMESTAMPTZ,
+  reason_code        TEXT,                      -- 'OAUTH_ERROR','ALIAS_MISMATCH','RATE_LIMIT','WALLET_ERROR'
+  reason_detail      TEXT,
+  metadata           JSONB,
+  CONSTRAINT fk_socialfail_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
+);
 -- =========================================================
 -- ONBOARDING / POST-SIGNUP
 -- =========================================================
@@ -137,51 +179,6 @@ CREATE TABLE IF NOT EXISTS issuer_preferences (
   metadata           JSONB,
   CONSTRAINT fk_preferences_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
 );
-
--- =========================================================
--- IDENTITY & SOCIAL VERIFICATION
--- =========================================================
-CREATE TABLE IF NOT EXISTS identity_verification (
-  identity_check_id  VARCHAR(36) PRIMARY KEY,
-  issuer_id          VARCHAR(36),
-  provider           TEXT,                      -- e.g., 'Persona','Onfido'
-  status             TEXT,                      -- 'INITIATED','PENDING','PASSED','FAILED','MANUAL_REVIEW'
-  level              TEXT,                      -- optional verification level
-  alias_confidence   NUMERIC(5,2),              -- 0-100
-  opted_in           BOOLEAN,
-  initiated_at       TIMESTAMPTZ,
-  completed_at       TIMESTAMPTZ,
-  failure_reason     TEXT,
-  raw_response       JSONB,
-  CONSTRAINT fk_identity_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
-);
-
-CREATE TABLE IF NOT EXISTS social_verification (
-  social_verif_id    VARCHAR(36) PRIMARY KEY,
-  issuer_id          VARCHAR(36),
-  platform           TEXT,                      -- 'YOUTUBE','TIKTOK','INSTAGRAM','TWITCH','X','FACEBOOK'
-  handle             TEXT,
-  followers_count    NUMERIC(38,0),
-  verified           BOOLEAN,
-  initiated_at       TIMESTAMPTZ,
-  completed_at       TIMESTAMPTZ,
-  attempts           NUMERIC(38,0),
-  status             TEXT,                      -- 'SUCCESS','FAILED','PENDING'
-  metadata           JSONB,
-  CONSTRAINT fk_socialverif_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
-);
-
-CREATE TABLE IF NOT EXISTS social_media_auth_fail (
-  auth_fail_id       VARCHAR(36) PRIMARY KEY,
-  issuer_id          VARCHAR(36),
-  platform           TEXT,
-  failed_at          TIMESTAMPTZ,
-  reason_code        TEXT,                      -- 'OAUTH_ERROR','ALIAS_MISMATCH','RATE_LIMIT','WALLET_ERROR'
-  reason_detail      TEXT,
-  metadata           JSONB,
-  CONSTRAINT fk_socialfail_issuer FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
-);
-
 -- =========================================================
 -- WALLET AND TOKENS
 -- =========================================================
@@ -212,16 +209,21 @@ CREATE TABLE IF NOT EXISTS transactions (
   buyer_id             VARCHAR(36) NOT NULL,
   seller_id            VARCHAR(36),                    -- null for primary/platform sell
   quantity             NUMERIC(38,0) NOT NULL,
-  price_per_token      NUMERIC(18,2) NOT NULL,
-  total_amount_usdc    NUMERIC(18,2) NOT NULL,
-  transaction_type     TEXT NOT NULL,                  -- 'primary' | 'secondary'
-  swap_api_reference   TEXT,                           -- Alchemy Swap ID
-  original_currency    TEXT,                           -- e.g., 'ETH'
-  status               TEXT NOT NULL,                  -- 'pending' | 'completed' | 'reversed' | 'voided'
+
+  -- HIGH PRECISION (bonding curve)
+  price_per_token      NUMERIC(38,6) NOT NULL,
+  total_amount_usdc    NUMERIC(38,6) NOT NULL,
+
+  transaction_type     TEXT NOT NULL,                  -- 'primary' only for now
+  swap_api_reference   TEXT,
+  original_currency    TEXT,
+  status               TEXT NOT NULL,
   reversal_reason      TEXT,
+
   "timestamp"          TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-  on_chain_tx_hash     TEXT,                           -- 66-char hex hash
-  merkle_proof_hash    TEXT,                           -- 64-char hex
+  on_chain_tx_hash     TEXT,
+  merkle_proof_hash    TEXT,
+
   CONSTRAINT fk_tx_token  FOREIGN KEY (token_id)  REFERENCES tokens(token_id),
   CONSTRAINT fk_tx_buyer  FOREIGN KEY (buyer_id)  REFERENCES users(user_id),
   CONSTRAINT fk_tx_seller FOREIGN KEY (seller_id) REFERENCES users(user_id)
