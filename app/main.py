@@ -30,7 +30,7 @@ from app.cache import (
 def main():
 
     # # =========================
-    # # 🔴 TEMP BLOCK — SETUP
+    # # TEMP BLOCK — SETUP
     # # =========================
     # # WHY:
     # # - Run ONCE to store schema embeddings in Chroma
@@ -46,7 +46,7 @@ def main():
     # print("Stored embeddings.")
 
     # # =========================
-    # # 🔴 TEMP BLOCK — TEST RAG
+    # # TEMP BLOCK — TEST RAG
     # # =========================
     # # WHY:
     # # - Validate embeddings + vector DB + similarity search
@@ -67,12 +67,12 @@ def main():
     # print("\nRAG TEST RESULTS:\n", results["documents"])
 
     # =========================
-    # ✅ ACTUAL APP FLOW
+    # ACTUAL APP FLOW
     # =========================
 
     user_input = input("Ask a question: ")
 
-    # ✅ ADDED (Day 16 — retrieve context ONCE and reuse)
+    # ADDED (Day 16 — retrieve context ONCE and reuse)
     docs = retrieve_relevant_docs(user_input)
     context = build_context(docs)
 
@@ -104,7 +104,7 @@ def main():
         if isinstance(result, dict) and "error" in result:
             print("\nRetrying with fixed SQL...\n")
 
-            # 🔴 CHANGED (pass context into fix_sql)
+            # CHANGED (pass context into fix_sql)
             fixed_sql = fix_sql(user_input, sql, result["error"], context)
             print("Fixed SQL:\n", fixed_sql)
             # fixed_sql = fix_sql(user_input, sql, result["error"])

@@ -1,0 +1,220 @@
+sql_llm/
+│
+├── airflow/ #NOT IMPLEMENTED YET
+│   └── dags/
+│       └── pipeline_dag.py
+│
+├── dbt/ #NOT IMPLEMENTED YET
+│   ├── models/
+│   │   ├── staging/
+│   │   ├── marts/
+│   │   └── metrics/
+│
+├── app/
+│   ├── main.py                 # orchestrates full flow
+│   ├── schema.py               # schema extraction / formatting
+│   ├── logger.py               # logging utility
+│   ├── cache.py                
+│   ├── ui.py                   
+│   ├── llm/
+│   │   ├── generate_sql.py     # NL → SQL
+│   │   ├── prompts.py          # prompt templates
+│   │   ├── explain_results.py 
+│   │   └── __init__.py  
+│   │
+│   ├── rag/ #NOT IMPLEMENTED YET
+│   │   ├── embeddings.py       # create embeddings
+│   │   ├── vector_store.py     # Chroma client + storage
+│   │   ├── retriever.py       
+│   │   ├── context_builder.py  
+│   │   └── __init__.py  
+│   │
+│   ├── db/
+│   │   ├── query_runner.py
+│   │   ├── validator.py
+│   │   └── __init__.py  
+│   └── __init__.py  
+│
+├── data/
+│   └── sample_data.csv
+│   └── schema_docs.json        
+│
+├── chroma_db
+│
+├── docker-compose.yml
+├── venv
+├── .env
+├── requirements.txt
+├── runtime.txt
+└── README.md
+
+
+
+ARCHITECTURE
+
+          ┌──────────────┐
+          │  User Query  │
+          └──────┬───────┘
+                 ↓
+        ┌─────────────────────┐
+        │   Embedding Model   │
+        └────────┬────────────┘
+                 ↓
+        ┌─────────────────────┐
+        │   Vector DB (RAG)   │
+        └────────┬────────────┘
+                 ↓
+        ┌─────────────────────┐
+        │ Context Builder     │
+        └────────┬────────────┘
+                 ↓
+        ┌─────────────────────┐
+        │ LLM → SQL           │
+        └────────┬────────────┘
+                 ↓
+        ┌─────────────────────┐
+        │ SQL Validator       │
+        └────────┬────────────┘
+                 ↓
+        ┌─────────────────────┐
+        │ Query Execution     │
+        └────────┬────────────┘
+                 ↓
+        ┌─────────────────────┐
+        │ Self-Correction     │
+        └─────────────────────┘
+
+
+
+                ┌──────────────────────────┐
+                │        User (UI)         │
+                │    Streamlit (ui.py)     │
+                └────────────┬─────────────┘
+                             │ user question
+                             ↓
+                ┌──────────────────────────┐
+                │   Retriever (RAG)        │
+                │   retriever.py           │
+                └────────────┬─────────────┘
+                             │
+        ┌────────────────────┴────────────────────┐
+        │                                         │
+        ↓                                         ↓
+┌──────────────────────┐             ┌────────────────────────┐
+│ schema_docs.json     │             │ vector_store.py        │
+│ (data source)        │             │ Chroma DB              │
+└──────────┬───────────┘             └──────────┬─────────────┘
+           │                                    │
+           │ load + format                      │ similarity search
+           ↓                                    ↓
+     ┌────────────────────────────────────────────┐
+     │ embeddings.py                              │
+     │ → text chunks + embeddings                 │
+     └────────────────────────────────────────────┘
+                             │
+                             ↓
+                ┌──────────────────────────┐
+                │  context_builder.py      │
+                │  → clean schema context  │
+                └────────────┬─────────────┘
+                             │
+                             ↓
+                ┌──────────────────────────┐
+                │   generate_sql.py        │
+                │   (LLM)                  │
+                └────────────┬─────────────┘
+                             │ SQL
+                             ↓
+                ┌──────────────────────────┐
+                │   validator.py           │
+                │   → safe SQL only        │
+                └────────────┬─────────────┘
+                             │
+                             ↓
+                ┌──────────────────────────┐
+                │   query_runner.py        │
+                │   → Postgres execution   │
+                └────────────┬─────────────┘
+                             │ results / error
+                 ┌───────────┴────────────┐
+                 ↓                        ↓
+   ┌──────────────────────────┐   ┌──────────────────────────┐
+   │ explain_results.py       │   │ generate_sql.fix_sql()   │
+   │ → natural language       │   │ → retry on failure       │
+   └────────────┬─────────────┘   └────────────┬─────────────┘
+                │                              │
+                └──────────────┬───────────────┘
+                               ↓
+                ┌──────────────────────────┐
+                │ UI (Streamlit)           │
+                │ → SQL + table + explain  │
+                └──────────────────────────┘
+
+User Input (Streamlit UI)
+        │
+        ↓
+retrieve_relevant_docs(question)
+        │
+        ├── load_schema_docs()                [embeddings.py]
+        ├── format_doc()
+        ├── OpenAI embeddings (question)
+        ├── get_collection()                 [vector_store.py]
+        ├── query_collection()
+        └── return relevant docs
+        │
+        ↓
+build_context(docs)                          [context_builder.py]
+        │
+        └── returns formatted schema text
+        │
+        ↓
+generate_sql(question)                       [generate_sql.py]
+        │
+        ├── retrieve_relevant_docs()   (called AGAIN internally)
+        ├── build_context()
+        ├── construct prompt
+        ├── OpenAI chat.completions()
+        └── clean_sql()
+        │
+        ↓
+validate_sql(sql)                            [validator.py]
+        │
+        ├── check starts with SELECT
+        └── block unsafe keywords
+        │
+        ↓
+enforce_limit(sql)
+        │
+        └── append LIMIT if missing
+        │
+        ↓
+PostgresClient.run_query(sql)                [query_runner.py]
+        │
+        ├── psycopg2 execute
+        └── return results OR error
+        │
+        ├───────────────┐
+        │               │
+        ↓               ↓
+SUCCESS           ERROR PATH
+        │               │
+        │         fix_sql(question, sql, error, context)
+        │               │
+        │         ├── OpenAI call
+        │         └── corrected SQL
+        │               │
+        │         run_query() again
+        │
+        ↓
+explain_results(question, sql, results)      [explain_results.py]
+        │
+        └── OpenAI explanation
+        │
+        ↓
+Streamlit UI Rendering
+        ├── SQL
+        ├── DataFrame
+        ├── Explanation
+        └── Debug context
+
+
