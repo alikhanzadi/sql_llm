@@ -15,8 +15,8 @@
     "columns": ["trade_id", "user_id", "athlete_id", "amount", "created_at"]
   },  
   {
-  "type": "metric",
-  "name": "average trades per user",
-  "definition": "total number of trades divided by number of unique users; computed as AVG(trade_count) where trade_count is COUNT(*) per user_id from trades"
+    "type": "metric",
+    "name": "average trades per user",
+    "definition": "total number of trades divided by number of unique users; computed as AVG(trade_count) where trade_count is COUNT(*) per user_id from trades"
   }
 ]

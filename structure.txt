@@ -85,6 +85,7 @@ ARCHITECTURE
         └─────────────────────┘
 
 
+Conceptual Pipeline (System Architecture)
 
                 ┌──────────────────────────┐
                 │        User (UI)         │

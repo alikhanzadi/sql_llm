@@ -16,6 +16,7 @@ from app.llm.generate_sql import fix_sql
 # For the TEMP parts
 # from app.rag.embeddings import load_schema_docs, generate_embeddings
 # from app.rag.vector_store import get_collection, store_embeddings, query_collection
+from app.rag.ingest import run_ingest
 from app.rag.retriever import retrieve_relevant_docs
 from app.rag.context_builder import build_context
 
@@ -71,6 +72,8 @@ def main():
     # =========================
 
     user_input = input("Ask a question: ")
+
+    run_ingest()
 
     # ADDED (Day 16 — retrieve context ONCE and reuse)
     docs = retrieve_relevant_docs(user_input)

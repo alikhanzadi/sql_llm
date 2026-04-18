@@ -31,7 +31,7 @@ if "history" not in st.session_state:
 # -------------------------
 # Page Config
 # -------------------------
-st.set_page_config(page_title="AthenaIQ", layout="wide")
+st.set_page_config(page_title="ATHL Analytics", layout="wide")
 
 st.title("AthenaIQ")
 st.caption("Ask questions about your data using AI")

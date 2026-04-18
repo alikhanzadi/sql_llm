@@ -2,6 +2,8 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
+# Mostly Day 5
+
 # Day 15: Why this is removed: keyword-based filtering is removed and replaced with semantic retrieval (RAG)
 # from app.schema import get_schema # Day 15 - commented out
 from .prompts import SYSTEM_PROMPT
@@ -40,7 +42,7 @@ def matches(term: str, text: str) -> bool:
         (term + "s") in text
     )
 
-# def filter_schema(schema: dict, question: str) -> dict:
+# def filter_schema(schema: dict, question: str) -> dict: # DAY 5 # Day 9 --> commented out
 #     question = question.lower()
 #     filtered = {}
 
@@ -67,7 +69,7 @@ def matches(term: str, text: str) -> bool:
     # fallback if nothing matched
     # return filtered if filtered else schema
 
-# def filter_schema(schema: dict, question: str) -> dict: # Day 15 - commented out
+# def filter_schema(schema: dict, question: str) -> dict: #Day 9 # Day 15 - commented out
 #     question = question.lower()
 #     table_scores = {}
 
@@ -113,7 +115,7 @@ def matches(term: str, text: str) -> bool:
 
 #     return filtered if filtered else schema
 
-# def generate_sql(user_query: str) -> str: # Day 15 - commented out
+# def generate_sql(user_query: str) -> str: # Day 5 | # Day 15 - commented out
 #     schema = get_schema()
 #     filtered_schema = filter_schema(schema, user_query)
 #     schema_text = format_schema(filtered_schema)

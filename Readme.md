@@ -371,3 +371,118 @@ Streamlit UI Rendering
         ├── DataFrame
         ├── Explanation
         └── Debug context
+
+--------------
+FROM DAY 11
+# ATHL Analytics Agent — AI-Powered Data Analyst
+
+## Overview
+
+ATHL Analytics Agent is an AI-driven analytics assistant that translates natural language questions into SQL queries and returns actionable insights from structured data.
+
+The system leverages Retrieval-Augmented Generation (RAG) to provide schema-aware, context-rich query generation, enabling users to interact with data without writing SQL.
+
+This project demonstrates how modern LLM systems can be combined with data engineering principles to build scalable, intelligent analytics tools.
+
+---
+
+## Key Features
+
+- Natural language → SQL query generation
+- Semantic schema retrieval using vector embeddings
+- Metric-aware querying (business logic understanding)
+- Self-correction loop for SQL error handling
+- Interactive UI for querying and exploration
+- Query history and debugging visibility
+- Clean modular architecture (RAG-based pipeline)
+
+---
+
+## Architecture
+
+
+User Input
+↓
+Retriever (ChromaDB)
+↓
+Context Builder
+↓
+LLM (SQL Generation)
+↓
+SQL Validator
+↓
+PostgreSQL Execution
+↓
+Results + Explanation
+
+
+---
+
+## System Design Highlights
+
+### 1. Retrieval-Augmented Generation (RAG)
+Instead of passing the entire schema to the LLM, the system:
+- Embeds schema metadata into a vector database
+- Retrieves only relevant tables and metrics per query
+- Improves accuracy and scalability
+
+### 2. Metric-Aware Reasoning
+Metrics are treated as first-class entities:
+- Embedded alongside schema
+- Retrieved contextually
+- Used by LLM to generate correct aggregations
+
+### 3. Self-Correction Loop
+- Detects SQL execution errors
+- Re-prompts LLM with error + schema context
+- Automatically retries with corrected SQL
+
+### 4. Modular Pipeline
+Each component is isolated:
+- Retriever
+- Context Builder
+- SQL Generator
+- Validator
+- Query Runner
+
+This makes the system extensible and production-ready.
+
+---
+
+## Tech Stack
+
+- Python
+- OpenAI API (LLM + embeddings)
+- ChromaDB (vector database)
+- PostgreSQL
+- Streamlit (UI)
+
+---
+
+## Example Queries
+
+- "total trades"
+- "average trades per user"
+- "total trades by signup date"
+- "trades per athlete"
+- "top users by trading activity"
+
+---
+
+## UI Preview
+
+(Add screenshots here)
+
+Suggested screenshots:
+- Query → SQL → Results
+- Retrieved context (debug)
+- Query history sidebar
+
+---
+
+## How to Run Locally
+
+### 1. Install dependencies
+
+```bash
+pip install -r requirements.txt        
