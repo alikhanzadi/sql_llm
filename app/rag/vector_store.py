@@ -25,8 +25,14 @@ def get_collection(name="schema_docs"):
     - Collections group related embeddings
     - 'schema_docs' will store your table metadata
     """
-    client = get_chroma_client()
-    return client.get_or_create_collection(name=name)
+    # client = get_chroma_client()
+    # return client.get_or_create_collection(name=name)
+
+    try:
+        collection = client.get_or_create_collection(name=name)
+    except:
+        client = chromadb.Client()
+        collection = client.create_collection(name=name)
 
 
 def store_embeddings(collection, embedded_docs):
