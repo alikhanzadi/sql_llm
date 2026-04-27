@@ -14,7 +14,9 @@ def get_chroma_client():
     - Ensures embeddings are saved to disk (./chroma_db)
     - Fixes issue where no folder was created
     """
-    return chromadb.PersistentClient(path="./chroma_db")
+    # return chromadb.PersistentClient(path="./chroma_db")
+    return chromadb.Client()
+
 
 
 def get_collection(name="schema_docs"):
@@ -25,7 +27,7 @@ def get_collection(name="schema_docs"):
     - Collections group related embeddings
     - 'schema_docs' will store your table metadata
     """
-    # client = get_chroma_client()
+    client = get_chroma_client()
     # return client.get_or_create_collection(name=name)
 
     try:
