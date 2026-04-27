@@ -3,3 +3,4 @@ venv/
 /- for me/
 .streamlit/
 data/v1
+chroma_db/
