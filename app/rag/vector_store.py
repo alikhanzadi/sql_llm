@@ -18,7 +18,6 @@ def get_chroma_client():
     return chromadb.Client()
 
 
-
 def get_collection(name="schema_docs"):
     """
     Get or create a collection.
@@ -35,6 +34,7 @@ def get_collection(name="schema_docs"):
     except:
         client = chromadb.Client()
         collection = client.create_collection(name=name)
+    return collection  # ✅ ADD THIS
 
 
 def store_embeddings(collection, embedded_docs):
