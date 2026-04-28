@@ -3,7 +3,7 @@ import json
 import hashlib
 
 from app.rag.embeddings import load_schema_docs, generate_embeddings
-from app.rag.vector_store import get_collection, store_embeddings
+from app.rag.vector_store import get_collection, store_embeddings, get_chroma_client
 
 STATE_FILE = "chroma_db/schema_hash.txt"
 
@@ -31,12 +31,12 @@ def save_hash(hash_value: str):
     with open(STATE_FILE, "w") as f:
         f.write(hash_value)
 
-from app.rag.vector_store import get_chroma_client
+# from app.rag.vector_store import get_chroma_client
 
-client = get_chroma_client()
-client.delete_collection(name="schema_docs")
+# client = get_chroma_client()
+# client.delete_collection(name="schema_docs")
 
-collection = client.get_or_create_collection(name="schema_docs")
+# collection = client.get_or_create_collection(name="schema_docs")
 
 
 def run_ingest():
@@ -54,7 +54,11 @@ def run_ingest():
     # ✅ FIX: reset collection properly
     client = get_chroma_client()
     try:
-        client.delete_collection(name="schema_docs")
+        # client.delete_collection(name="schema_docs")
+        try:
+            client.delete_collection(name="schema_docs")
+        except:
+            pass
     except Exception:
         pass  # collection may not exist yet
 
