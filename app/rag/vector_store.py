@@ -29,12 +29,17 @@ def get_collection(name="schema_docs"):
     client = get_chroma_client()
     # return client.get_or_create_collection(name=name)
 
+    # try:
+    #     collection = client.get_or_create_collection(name=name)
+    # except:
+    #     client = chromadb.Client()
+    #     collection = client.create_collection(name=name)
+    # return collection 
+
     try:
-        collection = client.get_or_create_collection(name=name)
+        return client.get_collection(name=name)
     except:
-        client = chromadb.Client()
-        collection = client.create_collection(name=name)
-    return collection  # ✅ ADD THIS
+        return client.create_collection(name=name)
 
 
 def store_embeddings(collection, embedded_docs):
