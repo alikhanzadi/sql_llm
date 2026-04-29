@@ -14,12 +14,7 @@ from app.llm.explain_results import explain_results
 
 from app.rag.retriever import retrieve_relevant_docs
 from app.rag.context_builder import build_context
-
-try:
-    client = PostgresClient()
-    result = client.run_query(sql)
-except Exception:
-    result = [{"message": "Demo mode (no DB connection)"}]
+from app.rag.ingest import run_ingest
 
 # -------------------------
 # Session State (History)
@@ -35,6 +30,9 @@ st.set_page_config(page_title="ATHL Analytics", layout="wide")
 
 st.title("AthenaIQ")
 st.caption("Ask questions about your data using AI")
+
+# Keep embeddings aligned with the active schema docs.
+run_ingest()
 
 
 # -------------------------

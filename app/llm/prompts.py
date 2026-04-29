@@ -24,26 +24,25 @@ Rules:
 
 Examples:
 
-Question: total trades
+Question: total records in a table
 SQL:
-SELECT COUNT(*) AS total_trades
-FROM trades;
+SELECT COUNT(*) AS total_records
+FROM your_table;
 
-Question: total trades by signup date
+Question: total records by day
 SQL:
-SELECT u.signup_date, COUNT(*) AS total_trades
-FROM trades t
-JOIN users u ON t.user_id = u.user_id
-GROUP BY u.signup_date;
+SELECT DATE(timestamp_column) AS day, COUNT(*) AS total_records
+FROM your_table
+GROUP BY DATE(timestamp_column);
 
-Question: average trades per user
+Question: average records per user
 SQL:
-SELECT AVG(trade_count) AS average_trades_per_user
+SELECT AVG(record_count) AS average_records_per_user
 FROM (
-    SELECT user_id, COUNT(*) AS trade_count
-    FROM trades
+    SELECT user_id, COUNT(*) AS record_count
+    FROM your_table
     GROUP BY user_id
-) t;
+) x;
 """
 
 # SYSTEM_PROMPT = """

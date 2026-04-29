@@ -1,0 +1,499 @@
+[{
+  "table_name": "payments",
+  "column_name": "payment_id"
+}, {
+  "table_name": "transactions",
+  "column_name": "transaction_id"
+}, {
+  "table_name": "tokens",
+  "column_name": "token_id"
+}, {
+  "table_name": "users",
+  "column_name": "user_role"
+}, {
+  "table_name": "user_wallet",
+  "column_name": "wallet_id"
+}, {
+  "table_name": "tokens",
+  "column_name": "total_revenue"
+}, {
+  "table_name": "waitlist",
+  "column_name": "status"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "reason_detail"
+}, {
+  "table_name": "users",
+  "column_name": "country"
+}, {
+  "table_name": "users",
+  "column_name": "gender"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "created_at"
+}, {
+  "table_name": "users",
+  "column_name": "primary_social_handle"
+}, {
+  "table_name": "social_verification",
+  "column_name": "completed_at"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "level"
+}, {
+  "table_name": "tokens",
+  "column_name": "created_at"
+}, {
+  "table_name": "tokens",
+  "column_name": "total_sold"
+}, {
+  "table_name": "issuers",
+  "column_name": "username"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "created_at"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "notification_prefs"
+}, {
+  "table_name": "users",
+  "column_name": "primary_social_platform"
+}, {
+  "table_name": "user_wallet",
+  "column_name": "usdc_balance"
+}, {
+  "table_name": "transactions",
+  "column_name": "total_amount_usdc"
+}, {
+  "table_name": "tokens",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "waitlist",
+  "column_name": "waitlist_id"
+}, {
+  "table_name": "users",
+  "column_name": "zip_code"
+}, {
+  "table_name": "transactions",
+  "column_name": "starting_price"
+}, {
+  "table_name": "payments",
+  "column_name": "recipient_id"
+}, {
+  "table_name": "waitlist",
+  "column_name": "added_at"
+}, {
+  "table_name": "users",
+  "column_name": "created_user_agent"
+}, {
+  "table_name": "user_token_wallet",
+  "column_name": "token_id"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "biography"
+}, {
+  "table_name": "users",
+  "column_name": "metadata"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "oauth_verified_min2"
+}, {
+  "table_name": "waitlist",
+  "column_name": "notes"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "league"
+}, {
+  "table_name": "social_verification",
+  "column_name": "verified"
+}, {
+  "table_name": "users",
+  "column_name": "account_status"
+}, {
+  "table_name": "user_wallet",
+  "column_name": "eth_balance"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "metadata"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "social_verification",
+  "column_name": "handle"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "wallet_email_sent"
+}, {
+  "table_name": "users",
+  "column_name": "created_ip"
+}, {
+  "table_name": "payments",
+  "column_name": "installment_number"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "metadata"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "created_at"
+}, {
+  "table_name": "waitlist",
+  "column_name": "metadata"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "platform"
+}, {
+  "table_name": "users",
+  "column_name": "mfa_enabled"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "user_id"
+}, {
+  "table_name": "transactions",
+  "column_name": "seller_id"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "content_mediums"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "transactions",
+  "column_name": "merkle_proof_hash"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "profile_completion"
+}, {
+  "table_name": "social_verification",
+  "column_name": "social_verif_id"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "updated_at"
+}, {
+  "table_name": "users",
+  "column_name": "created_at"
+}, {
+  "table_name": "transactions",
+  "column_name": "ending_price"
+}, {
+  "table_name": "users",
+  "column_name": "referral_id"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "auth_fail_id"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "updated_at"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "wallet_address"
+}, {
+  "table_name": "users",
+  "column_name": "time_zone"
+}, {
+  "table_name": "transactions",
+  "column_name": "transaction_type"
+}, {
+  "table_name": "social_verification",
+  "column_name": "platform"
+}, {
+  "table_name": "issuers",
+  "column_name": "updated_at"
+}, {
+  "table_name": "user_wallet",
+  "column_name": "created_at"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "raw_response"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "profile_completion"
+}, {
+  "table_name": "social_verification",
+  "column_name": "initiated_at"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "waitlist",
+  "column_name": "activated_at"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "verified_at"
+}, {
+  "table_name": "issuers",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "users",
+  "column_name": "password_hash"
+}, {
+  "table_name": "transactions",
+  "column_name": "timestamp"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "raise_target_usd"
+}, {
+  "table_name": "tokens",
+  "column_name": "updated_at"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "creator_category"
+}, {
+  "table_name": "transactions",
+  "column_name": "buyer_id"
+}, {
+  "table_name": "issuer_daily_revenue",
+  "column_name": "date"
+}, {
+  "table_name": "social_verification",
+  "column_name": "attempts"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "updated_at"
+}, {
+  "table_name": "tokens",
+  "column_name": "current_supply_minted"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "failure_reason"
+}, {
+  "table_name": "issuers",
+  "column_name": "metadata"
+}, {
+  "table_name": "issuers",
+  "column_name": "created_at"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "failed_at"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "enable_referrals"
+}, {
+  "table_name": "users",
+  "column_name": "email"
+}, {
+  "table_name": "issuers",
+  "column_name": "email"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "status"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "sport"
+}, {
+  "table_name": "user_wallet",
+  "column_name": "total_token_value"
+}, {
+  "table_name": "waitlist",
+  "column_name": "approved_at"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "position_secondary"
+}, {
+  "table_name": "payments",
+  "column_name": "payout_tx_reference"
+}, {
+  "table_name": "issuer_daily_revenue",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "biography"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "tokens",
+  "column_name": "mint_timestamp"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "identity_check_id"
+}, {
+  "table_name": "issuers",
+  "column_name": "user_id"
+}, {
+  "table_name": "tokens",
+  "column_name": "secondary_trading_enabled"
+}, {
+  "table_name": "issuer_daily_revenue",
+  "column_name": "total_amount_usdc"
+}, {
+  "table_name": "transactions",
+  "column_name": "token_id"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "metadata"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "team"
+}, {
+  "table_name": "payments",
+  "column_name": "due_date"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "provider"
+}, {
+  "table_name": "issuers",
+  "column_name": "issuer_type"
+}, {
+  "table_name": "transactions",
+  "column_name": "status"
+}, {
+  "table_name": "social_verification",
+  "column_name": "metadata"
+}, {
+  "table_name": "transactions",
+  "column_name": "swap_api_reference"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "token_supply_goal"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "user_id"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "opted_in"
+}, {
+  "table_name": "issuers",
+  "column_name": "level"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "wallet_provisioned"
+}, {
+  "table_name": "social_verification",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "updated_at"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "completed_at"
+}, {
+  "table_name": "issuers",
+  "column_name": "region"
+}, {
+  "table_name": "users",
+  "column_name": "email_verification_status"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "metadata"
+}, {
+  "table_name": "transactions",
+  "column_name": "original_currency"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "social_verification",
+  "column_name": "status"
+}, {
+  "table_name": "user_token_wallet",
+  "column_name": "user_id"
+}, {
+  "table_name": "users",
+  "column_name": "email_verified"
+}, {
+  "table_name": "transactions",
+  "column_name": "quantity"
+}, {
+  "table_name": "tokens",
+  "column_name": "token_symbol"
+}, {
+  "table_name": "transactions",
+  "column_name": "reversal_reason"
+}, {
+  "table_name": "users",
+  "column_name": "email_verification_score"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "metadata"
+}, {
+  "table_name": "creator_profile",
+  "column_name": "niche"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "initiated_at"
+}, {
+  "table_name": "issuers",
+  "column_name": "country"
+}, {
+  "table_name": "social_verification",
+  "column_name": "followers_count"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "position_primary"
+}, {
+  "table_name": "issuer_post_signup",
+  "column_name": "dashboard_redirect"
+}, {
+  "table_name": "transactions",
+  "column_name": "on_chain_tx_hash"
+}, {
+  "table_name": "tokens",
+  "column_name": "current_price"
+}, {
+  "table_name": "users",
+  "column_name": "display_name"
+}, {
+  "table_name": "user_token_wallet",
+  "column_name": "total_value"
+}, {
+  "table_name": "tokens",
+  "column_name": "paused_sales"
+}, {
+  "table_name": "payments",
+  "column_name": "amount_usdc"
+}, {
+  "table_name": "payments",
+  "column_name": "timestamp"
+}, {
+  "table_name": "social_media_auth_fail",
+  "column_name": "reason_code"
+}, {
+  "table_name": "payments",
+  "column_name": "status"
+}, {
+  "table_name": "users",
+  "column_name": "updated_at"
+}, {
+  "table_name": "tokens",
+  "column_name": "initial_supply"
+}, {
+  "table_name": "users",
+  "column_name": "user_id"
+}, {
+  "table_name": "user_wallet",
+  "column_name": "user_id"
+}, {
+  "table_name": "athlete_profile",
+  "column_name": "multi_sport"
+}, {
+  "table_name": "payments",
+  "column_name": "linked_transaction_id"
+}, {
+  "table_name": "issuers",
+  "column_name": "status"
+}, {
+  "table_name": "waitlist",
+  "column_name": "issuer_id"
+}, {
+  "table_name": "identity_verification",
+  "column_name": "alias_confidence"
+}, {
+  "table_name": "users",
+  "column_name": "last_login_at"
+}, {
+  "table_name": "user_token_wallet",
+  "column_name": "quantity"
+}, {
+  "table_name": "users",
+  "column_name": "username"
+}, {
+  "table_name": "issuer_preferences",
+  "column_name": "created_at"
+}, {
+  "table_name": "users",
+  "column_name": "passkey_public_key"
+}]

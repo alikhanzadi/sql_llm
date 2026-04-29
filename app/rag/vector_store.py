@@ -1,21 +1,43 @@
 # app/rag/vector_store.py
 
 import chromadb
-# from chromadb.config import Settings
+import os
+
+
+_CLIENT = None
+
+
+def _collection_name(base_name: str) -> str:
+    db_env = os.getenv("DB_ENV", "local").lower()
+    return f"{base_name}_{db_env}"
+
+
+def _is_ephemeral_env() -> bool:
+    db_env = os.getenv("DB_ENV", "local").lower()
+    return db_env == "prod"
+
+
+def get_chroma_mode() -> str:
+    return "ephemeral" if _is_ephemeral_env() else "persistent"
 
 # get_collection() → client created
 # store_embeddings() → upsert() → writes to disk → folder created
 
 def get_chroma_client():
     """
-    Create a persistent Chroma client.
+    Create Chroma client by environment.
 
     Why:
-    - Ensures embeddings are saved to disk (./chroma_db)
-    - Fixes issue where no folder was created
+    - Local: keep embeddings on disk for faster iteration
+    - Prod/cloud: keep in-memory because filesystem is ephemeral
     """
-    # return chromadb.PersistentClient(path="./chroma_db")
-    return chromadb.Client()
+    global _CLIENT
+    if _CLIENT is None:
+        if _is_ephemeral_env():
+            _CLIENT = chromadb.Client()
+        else:
+            _CLIENT = chromadb.PersistentClient(path="./chroma_db")
+    return _CLIENT
 
 
 def get_collection(name="schema_docs"):
@@ -27,6 +49,7 @@ def get_collection(name="schema_docs"):
     - 'schema_docs' will store your table metadata
     """
     client = get_chroma_client()
+    env_name = _collection_name(name)
     # return client.get_or_create_collection(name=name)
 
     # try:
@@ -37,9 +60,9 @@ def get_collection(name="schema_docs"):
     # return collection 
 
     try:
-        return client.get_collection(name=name)
+        return client.get_collection(name=env_name)
     except:
-        return client.create_collection(name=name)
+        return client.create_collection(name=env_name)
 
 
 def store_embeddings(collection, embedded_docs):

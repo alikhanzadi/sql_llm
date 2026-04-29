@@ -2,10 +2,26 @@ import os
 import json
 import hashlib
 
-from app.rag.embeddings import load_schema_docs, generate_embeddings
-from app.rag.vector_store import get_collection, store_embeddings, get_chroma_client
+from app.rag.embeddings import load_schema_docs, generate_embeddings, get_active_schema_path
+from app.rag.vector_store import get_collection, store_embeddings, get_chroma_client, get_chroma_mode
 
-STATE_FILE = "chroma_db/schema_hash.txt"
+_STARTUP_LOGGED = False
+
+
+def _state_file() -> str:
+    db_env = os.getenv("DB_ENV", "local").lower()
+    return f"chroma_db/schema_hash_{db_env}.txt"
+
+
+def _log_startup_once():
+    global _STARTUP_LOGGED
+    if _STARTUP_LOGGED:
+        return
+    db_env = os.getenv("DB_ENV", "local").lower()
+    print(
+        f"[startup] DB_ENV={db_env} | schema_docs={get_active_schema_path()} | chroma_mode={get_chroma_mode()}"
+    )
+    _STARTUP_LOGGED = True
 
 
 def compute_schema_hash(docs: list) -> str:
@@ -16,10 +32,11 @@ def compute_schema_hash(docs: list) -> str:
 
 def has_schema_changed(new_hash: str) -> bool:
     """Check if schema has changed since last ingest."""
-    if not os.path.exists(STATE_FILE):
+    state_file = _state_file()
+    if not os.path.exists(state_file):
         return True
 
-    with open(STATE_FILE, "r") as f:
+    with open(state_file, "r") as f:
         old_hash = f.read().strip()
 
     return new_hash != old_hash
@@ -27,8 +44,9 @@ def has_schema_changed(new_hash: str) -> bool:
 
 def save_hash(hash_value: str):
     """Persist latest schema hash."""
-    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-    with open(STATE_FILE, "w") as f:
+    state_file = _state_file()
+    os.makedirs(os.path.dirname(state_file), exist_ok=True)
+    with open(state_file, "w") as f:
         f.write(hash_value)
 
 # from app.rag.vector_store import get_chroma_client
@@ -40,6 +58,7 @@ def save_hash(hash_value: str):
 
 
 def run_ingest():
+    _log_startup_once()
     docs = load_schema_docs()
     schema_hash = compute_schema_hash(docs)
 
@@ -51,12 +70,12 @@ def run_ingest():
 
     embedded_docs = generate_embeddings(docs)
 
-    # ✅ FIX: reset collection properly
+    # Reset only the active environment's collection.
     client = get_chroma_client()
+    collection_name = get_collection().name
     try:
-        # client.delete_collection(name="schema_docs")
         try:
-            client.delete_collection(name="schema_docs")
+            client.delete_collection(name=collection_name)
         except:
             pass
     except Exception:

@@ -426,3 +426,39 @@ FROM users LIMIT 10;
 2026-04-27 01:13:15,382 - RESULT: [RealDictRow([('total_users', 2000)])]
 2026-04-27 01:13:15,382 - ----
 2026-04-27 01:13:16,906 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-28 16:34:13,366 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 16:34:14,851 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 16:34:15,090 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 16:34:17,583 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-28 16:34:19,118 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-28 16:34:19,121 - QUESTION: How many trades done in each month
+2026-04-28 16:34:19,121 - SQL: SELECT DATE_TRUNC('month', created_at) AS trade_month, COUNT(*) AS total_trades
+FROM trades
+GROUP BY trade_month
+ORDER BY trade_month LIMIT 10;
+2026-04-28 16:34:19,121 - RESULT: {'error': 'column "created_at" does not exist\nLINE 1: SELECT DATE_TRUNC(\'month\', created_at) AS trade_month, COUNT...\n                                   ^\n'}
+2026-04-28 16:34:19,121 - ----
+2026-04-28 22:19:48,764 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 22:19:50,817 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 22:19:51,151 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 22:19:53,504 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-28 22:19:54,532 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-28 22:19:54,535 - QUESTION: How many trades done in each month
+2026-04-28 22:19:54,535 - SQL: SELECT DATE_TRUNC('month', trades.created_at) AS month, COUNT(*) AS total_trades
+FROM trades
+GROUP BY DATE_TRUNC('month', trades.created_at)
+ORDER BY month LIMIT 10;
+2026-04-28 22:19:54,535 - RESULT: {'error': "column trades.created_at does not exist\nLINE 1: SELECT DATE_TRUNC('month', trades.created_at) AS month, COUN...\n                                   ^\n"}
+2026-04-28 22:19:54,535 - ----
+2026-04-28 22:26:50,527 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 22:26:51,092 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 22:26:51,246 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-28 22:26:52,521 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-28 22:26:52,626 - QUESTION: How many trades done in each month
+2026-04-28 22:26:52,626 - SQL: SELECT DATE_TRUNC('month', t.trade_date) AS month, COUNT(*) AS total_trades
+FROM trades t
+GROUP BY DATE_TRUNC('month', t.trade_date)
+ORDER BY month LIMIT 10;
+2026-04-28 22:26:52,627 - RESULT: [RealDictRow([('month', datetime.datetime(2025, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)), ('total_trades', 4295)]), RealDictRow([('month', datetime.datetime(2025, 2, 1, 0, 0, tzinfo=datetime.timezon
+2026-04-28 22:26:52,627 - ----
+2026-04-28 22:26:55,835 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

@@ -11,11 +11,17 @@ class PostgresClient:
     def __init__(self):
 
         # Decide environment (local vs prod)
-        db_env = os.getenv("DB_ENV", "local")
+        db_env = os.getenv("DB_ENV", "local").lower()
 
         try:
-            key = "postgres_neon" if db_env == "prod" else "postgres_local"
-            creds = st.secrets[key]
+            if db_env == "prod" and "postgres_neon" in st.secrets:
+                creds = st.secrets["postgres_neon"]
+            elif db_env != "prod" and "postgres_local" in st.secrets:
+                creds = st.secrets["postgres_local"]
+            elif "postgres_neon" in st.secrets:
+                creds = st.secrets["postgres_neon"]
+            else:
+                creds = st.secrets["postgres_local"]
         except Exception:
             # fallback for local CLI runs
             creds = {
@@ -25,8 +31,6 @@ class PostgresClient:
                 "user": os.getenv("POSTGRES_USER"),
                 "password": os.getenv("POSTGRES_PASSWORD"),
             }
-        print(os.getenv("POSTGRES_HOST"))
-
         # # 1. Get the credentials (wherever they are)
         # creds = st.secrets["postgres"]
 
