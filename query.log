@@ -462,3 +462,32 @@ ORDER BY month LIMIT 10;
 2026-04-28 22:26:52,627 - RESULT: [RealDictRow([('month', datetime.datetime(2025, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)), ('total_trades', 4295)]), RealDictRow([('month', datetime.datetime(2025, 2, 1, 0, 0, tzinfo=datetime.timezon
 2026-04-28 22:26:52,627 - ----
 2026-04-28 22:26:55,835 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-29 14:04:28,825 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-29 14:04:29,263 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-29 14:04:31,352 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-29 14:04:31,425 - QUESTION: How many trades done in each month
+2026-04-29 14:04:31,426 - SQL: SELECT DATE_TRUNC('month', t.trade_date) AS month, COUNT(*) AS total_trades
+FROM trades t
+GROUP BY DATE_TRUNC('month', t.trade_date)
+ORDER BY month LIMIT 10;
+2026-04-29 14:04:31,426 - RESULT: [RealDictRow([('month', datetime.datetime(2025, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)), ('total_trades', 4295)]), RealDictRow([('month', datetime.datetime(2025, 2, 1, 0, 0, tzinfo=datetime.timezon
+2026-04-29 14:04:31,426 - ----
+2026-04-29 14:04:34,428 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-29 15:42:45,787 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-29 15:42:46,359 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-29 15:42:47,563 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-29 15:42:47,630 - QUESTION: How many athelets are there?
+2026-04-29 15:42:47,630 - SQL: SELECT COUNT(*) AS total_athletes
+FROM athlete_profile LIMIT 10;
+2026-04-29 15:42:47,630 - RESULT: [RealDictRow([('total_athletes', 97)])]
+2026-04-29 15:42:47,630 - ----
+2026-04-29 15:42:49,452 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-30 14:00:42,259 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-30 14:00:42,773 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-04-30 14:00:44,977 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-04-30 14:00:45,026 - QUESTION: How many athletes are there?
+2026-04-30 14:00:45,026 - SQL: SELECT COUNT(*) AS total_athletes
+FROM athlete_profile LIMIT 10;
+2026-04-30 14:00:45,026 - RESULT: [RealDictRow([('total_athletes', 97)])]
+2026-04-30 14:00:45,026 - ----
+2026-04-30 14:00:48,050 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

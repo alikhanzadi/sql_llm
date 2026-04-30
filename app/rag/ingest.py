@@ -4,13 +4,16 @@ import hashlib
 
 from app.rag.embeddings import load_schema_docs, generate_embeddings, get_active_schema_path
 from app.rag.vector_store import get_collection, store_embeddings, get_chroma_client, get_chroma_mode
+from app.local_schema import get_active_local_schema
 
 _STARTUP_LOGGED = False
 
 
 def _state_file() -> str:
     db_env = os.getenv("DB_ENV", "local").lower()
-    return f"chroma_db/schema_hash_{db_env}.txt"
+    if db_env == "prod":
+        return "chroma_db/schema_hash_prod.txt"
+    return f"chroma_db/schema_hash_local_{get_active_local_schema()}.txt"
 
 
 def _log_startup_once():
@@ -18,8 +21,9 @@ def _log_startup_once():
     if _STARTUP_LOGGED:
         return
     db_env = os.getenv("DB_ENV", "local").lower()
+    local_schema = get_active_local_schema()
     print(
-        f"[startup] DB_ENV={db_env} | schema_docs={get_active_schema_path()} | chroma_mode={get_chroma_mode()}"
+        f"[startup] DB_ENV={db_env} | local_schema={local_schema} | schema_docs={get_active_schema_path()} | chroma_mode={get_chroma_mode()}"
     )
     _STARTUP_LOGGED = True
 

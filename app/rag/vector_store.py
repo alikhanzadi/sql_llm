@@ -2,6 +2,7 @@
 
 import chromadb
 import os
+from app.local_schema import get_active_local_schema
 
 
 _CLIENT = None
@@ -9,12 +10,13 @@ _CLIENT = None
 
 def _collection_name(base_name: str) -> str:
     db_env = os.getenv("DB_ENV", "local").lower()
-    return f"{base_name}_{db_env}"
+    if db_env == "prod":
+        return f"{base_name}_{db_env}"
+    return f"{base_name}_{db_env}_{get_active_local_schema()}"
 
 
 def _is_ephemeral_env() -> bool:
-    db_env = os.getenv("DB_ENV", "local").lower()
-    return db_env == "prod"
+    return os.getenv("DB_ENV", "local").lower() == "prod"
 
 
 def get_chroma_mode() -> str:

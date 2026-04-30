@@ -5,6 +5,8 @@ import json
 import os
 from typing import Optional
 
+from app.local_schema import get_active_local_schema_docs_path
+
 client = OpenAI()
 
 
@@ -15,7 +17,7 @@ def _resolve_schema_path(path: Optional[str] = None) -> str:
     db_env = os.getenv("DB_ENV", "local").lower()
     if db_env == "prod":
         return "data/neondb_schema_docs.json"
-    return "data/local/schema_docs.json"
+    return get_active_local_schema_docs_path()
 
 
 def get_active_schema_path(path: Optional[str] = None) -> str:

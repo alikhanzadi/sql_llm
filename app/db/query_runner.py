@@ -5,7 +5,9 @@ load_dotenv()
 import streamlit as st 
 
 import psycopg2
+from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
+from app.local_schema import get_active_local_schema
 
 class PostgresClient:
     def __init__(self):
@@ -45,7 +47,16 @@ class PostgresClient:
             user=creds["user"],
             password=creds["password"],
             sslmode=ssl_mode
-        )        
+        )
+
+        if db_env != "prod":
+            local_schema = get_active_local_schema()
+            with self.conn.cursor() as cur:
+                cur.execute(
+                    sql.SQL("SET search_path TO {}, public").format(
+                        sql.Identifier(local_schema)
+                    )
+                )
 
     def run_query(self, query: str):
         try:
