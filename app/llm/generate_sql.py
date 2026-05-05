@@ -4,9 +4,6 @@ from dotenv import load_dotenv
 
 from .prompts import SYSTEM_PROMPT
 
-from app.rag.retriever import retrieve_relevant_docs
-from app.rag.context_builder import build_context
-
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -23,14 +20,8 @@ def clean_sql(response_text: str) -> str:
         .strip()
     )
 
-def generate_sql(user_query: str) -> str:
-    # Step 1: Retrieve relevant schema docs
-    docs = retrieve_relevant_docs(user_query)
-
-    # Step 2: Build clean context
-    context = build_context(docs)
-
-    # Step 3: Construct prompt
+def generate_sql(user_query: str, context: str) -> str:
+    # Step 1: Construct prompt from already-retrieved context
     prompt = f"""
     {context}
 
@@ -38,7 +29,7 @@ def generate_sql(user_query: str) -> str:
     {user_query}
     """
 
-    # Step 4: Call LLM
+    # Step 2: Call LLM
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[

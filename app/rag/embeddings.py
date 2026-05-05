@@ -5,7 +5,7 @@ import json
 import os
 from typing import Optional
 
-from app.local_schema import get_active_local_schema_docs_path
+from app.db.schema import get_active_local_schema_docs_path
 
 client = OpenAI()
 
@@ -16,7 +16,7 @@ def _resolve_schema_path(path: Optional[str] = None) -> str:
 
     db_env = os.getenv("DB_ENV", "local").lower()
     if db_env == "prod":
-        return "data/neondb_schema_docs.json"
+        return "app/rag/catalog/schema_docs/neondb_schema_docs.json"
     return get_active_local_schema_docs_path()
 
 
@@ -79,11 +79,44 @@ def format_doc(doc):
         Definition: {doc['definition']}
         """
 
-    # existing behavior (tables)
+    # Table docs support both legacy format (columns: [str]) and
+    # detailed format (columns: [{name, type, ...}, ...]).
+    raw_columns = doc.get("columns", [])
+    if raw_columns and isinstance(raw_columns[0], dict):
+        col_names = [c["name"] for c in raw_columns if c.get("name")]
+        col_details = [
+            f"{c.get('name')} ({c.get('type')}, {'nullable' if c.get('nullable', True) else 'not null'})"
+            for c in raw_columns
+            if c.get("name") and c.get("type")
+        ]
+    else:
+        col_names = raw_columns
+        col_details = []
+
+    primary_key = ", ".join(doc.get("primary_key", [])) or "None"
+    join_hints = ", ".join(doc.get("join_hints", [])) or "None"
+    time_columns = ", ".join(doc.get("time_columns", [])) or "None"
+    fk_descriptions = []
+    for fk in doc.get("foreign_keys", []):
+        local_cols = ", ".join(fk.get("columns", []))
+        ref_table = fk.get("references_table", "")
+        ref_cols = ", ".join(fk.get("references_columns", []))
+        if local_cols and ref_table and ref_cols:
+            fk_descriptions.append(f"{local_cols} -> {ref_table}({ref_cols})")
+    fk_text = ", ".join(fk_descriptions) or "None"
+
+    details_line = ""
+    if col_details:
+        details_line = f"\n    Column Details: {'; '.join(col_details)}"
+
     return f"""
     Table: {doc['table']}
     Description: {doc['description']}
-    Columns: {', '.join(doc['columns'])}
+    Columns: {', '.join(col_names)}
+    Primary Key: {primary_key}
+    Foreign Keys: {fk_text}
+    Join Hints: {join_hints}
+    Time Columns: {time_columns}{details_line}
     """
 
 

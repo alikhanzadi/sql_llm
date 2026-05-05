@@ -13,7 +13,7 @@
     "table": "trades",
     "description": "Records all trades made by users for athletes",
     "columns": ["trade_id", "user_id", "token_id", "trade_date", "quantity", "price"]
-  },  
+  },
   {
     "type": "metric",
     "name": "average trades per user",

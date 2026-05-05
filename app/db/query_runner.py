@@ -5,20 +5,19 @@ load_dotenv()
 import streamlit as st 
 
 import psycopg2
-from psycopg2 import sql
 from psycopg2.extras import RealDictCursor
-from app.local_schema import get_active_local_schema
+from app.db.schema import get_active_local_schema
 
 class PostgresClient:
     def __init__(self):
 
         # Decide environment (local vs prod)
-        db_env = os.getenv("DB_ENV", "local").lower()
+        self.db_env = os.getenv("DB_ENV", "local").lower()
 
         try:
-            if db_env == "prod" and "postgres_neon" in st.secrets:
+            if self.db_env == "prod" and "postgres_neon" in st.secrets:
                 creds = st.secrets["postgres_neon"]
-            elif db_env != "prod" and "postgres_local" in st.secrets:
+            elif self.db_env != "prod" and "postgres_local" in st.secrets:
                 creds = st.secrets["postgres_local"]
             elif "postgres_neon" in st.secrets:
                 creds = st.secrets["postgres_neon"]
@@ -39,24 +38,21 @@ class PostgresClient:
         # SSL for Neon only
         ssl_mode = "require" if "neon.tech" in creds["host"] else "disable"
 
-        # 3. Connect using the dynamically chosen SSL mode
-        self.conn = psycopg2.connect(
-            host=creds["host"],
-            port=creds["port"],
-            database=creds["database"],
-            user=creds["user"],
-            password=creds["password"],
-            sslmode=ssl_mode
-        )
+        conn_kwargs = {
+            "host": creds["host"],
+            "port": creds["port"],
+            "database": creds["database"],
+            "user": creds["user"],
+            "password": creds["password"],
+            "sslmode": ssl_mode,
+        }
 
-        if db_env != "prod":
-            local_schema = get_active_local_schema()
-            with self.conn.cursor() as cur:
-                cur.execute(
-                    sql.SQL("SET search_path TO {}, public").format(
-                        sql.Identifier(local_schema)
-                    )
-                )
+        if self.db_env != "prod":
+            # Set search_path at session startup for local runtime.
+            conn_kwargs["options"] = f"-c search_path={get_active_local_schema()}"
+
+        # Connect using the dynamically chosen SSL mode
+        self.conn = psycopg2.connect(**conn_kwargs)
 
     def run_query(self, query: str):
         try:

@@ -2,7 +2,7 @@
 
 import chromadb
 import os
-from app.local_schema import get_active_local_schema
+from app.db.schema import get_active_local_schema
 
 
 _CLIENT = None

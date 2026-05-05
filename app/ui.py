@@ -12,8 +12,7 @@ from app.db.validator import validate_sql, enforce_limit
 from app.llm.generate_sql import generate_sql, fix_sql
 from app.llm.explain_results import explain_results
 
-from app.rag.retriever import retrieve_relevant_docs
-from app.rag.context_builder import build_context
+from app.rag.context_service import get_retrieval_context
 from app.rag.ingest import run_ingest
 
 # -------------------------
@@ -46,11 +45,11 @@ if user_input:
     with st.spinner("Running query..."):
 
         # Step 1 — Retrieve context
-        docs = retrieve_relevant_docs(user_input)
-        context = build_context(docs)
+        retrieval_ctx = get_retrieval_context(user_input)
+        context = retrieval_ctx.text
 
         # Step 2 — Generate SQL
-        sql = generate_sql(user_input)
+        sql = generate_sql(user_input, context)
 
         st.subheader("Generated SQL")
         st.code(sql, language="sql")

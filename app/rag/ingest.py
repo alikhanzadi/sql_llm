@@ -4,11 +4,11 @@ import hashlib
 
 from app.rag.embeddings import load_schema_docs, generate_embeddings, get_active_schema_path
 from app.rag.vector_store import get_collection, store_embeddings, get_chroma_client, get_chroma_mode
-from app.local_schema import get_active_local_schema
+from app.db.schema import get_active_local_schema
 
 _STARTUP_LOGGED = False
 
-
+# Check if environment is prod or local and 
 def _state_file() -> str:
     db_env = os.getenv("DB_ENV", "local").lower()
     if db_env == "prod":

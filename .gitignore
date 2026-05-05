@@ -4,3 +4,12 @@ venv/
 .streamlit/
 data/v1
 chroma_db/
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Python bytecode/cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
