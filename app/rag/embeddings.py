@@ -16,7 +16,7 @@ def _resolve_schema_path(path: Optional[str] = None) -> str:
 
     db_env = os.getenv("DB_ENV", "local").lower()
     if db_env == "prod":
-        return "app/rag/catalog/schema_docs/neondb_schema_docs.json"
+        return "app/rag/catalog/schema_docs/v2_schema_docs.json"
     return get_active_local_schema_docs_path()
 
 

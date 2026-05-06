@@ -1,6 +1,17 @@
 {
   "version": "1.0.0",
   "catalog_name": "athl_kpi_catalog",
+  "taxonomy_context": {
+    "source_doc": "docs/database_schema_taxonomy.md",
+    "source_of_truth_principle": "transactions is source of truth; state and aggregates are derived layers",
+    "table_roles": {
+      "dimension": ["users", "issuers", "athlete_profile", "creator_profile"],
+      "event": ["transactions", "identity_verification", "social_verification"],
+      "state": ["tokens", "user_token_wallet", "user_wallet", "issuer_post_signup"],
+      "aggregate": ["issuer_daily_revenue"],
+      "config": ["issuer_preferences"]
+    }
+  },
   "kpis": [
     {
       "kpi_id": "issuer_type_distribution",

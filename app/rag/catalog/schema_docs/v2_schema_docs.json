@@ -1,0 +1,1406 @@
+[
+  {
+    "type": "table",
+    "table": "users",
+    "description": "Main Users table",
+    "columns": [
+      {
+        "name": "user_id",
+        "type": "VARCHAR(36)",
+        "nullable": false,
+        "comment": "UUID PK"
+      },
+      {
+        "name": "user_role",
+        "type": "TEXT",
+        "nullable": false,
+        "comment": "'ISSUER','FAN','BOTH'",
+        "suggested_values": [
+          "ISSUER",
+          "FAN",
+          "BOTH"
+        ]
+      },
+      {
+        "name": "display_name",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "\"What should we call you?\""
+      },
+      {
+        "name": "username",
+        "type": "TEXT",
+        "nullable": false,
+        "comment": "3-20 chars, unique across platform"
+      },
+      {
+        "name": "referral_id",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "UUID/unique code"
+      },
+      {
+        "name": "email",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "validated + verified email"
+      },
+      {
+        "name": "email_verified",
+        "type": "BOOLEAN",
+        "nullable": true,
+        "default": "FALSE",
+        "comment": "strong email verification"
+      },
+      {
+        "name": "email_verification_status",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'PENDING','VERIFIED','REJECTED','RISKY'",
+        "suggested_values": [
+          "PENDING",
+          "VERIFIED",
+          "REJECTED",
+          "RISKY"
+        ]
+      },
+      {
+        "name": "email_verification_score",
+        "type": "NUMERIC(5,2)",
+        "nullable": true,
+        "comment": "optional reputation score (0-100)"
+      },
+      {
+        "name": "country",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "ISO alpha-2"
+      },
+      {
+        "name": "zip_code",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "format-validated upstream"
+      },
+      {
+        "name": "gender",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'Male','Female','Other','Prefer not to say'",
+        "suggested_values": [
+          "Male",
+          "Female",
+          "Other",
+          "Prefer not to say"
+        ]
+      },
+      {
+        "name": "time_zone",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "password_hash",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "for fans using email/password (nullable)"
+      },
+      {
+        "name": "passkey_public_key",
+        "type": "JSONB",
+        "nullable": true,
+        "comment": "WebAuthn credential (nullable)"
+      },
+      {
+        "name": "primary_social_platform",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "e.g. 'X','INSTAGRAM','YOUTUBE' (nullable)",
+        "suggested_values": [
+          "X",
+          "INSTAGRAM",
+          "YOUTUBE"
+        ]
+      },
+      {
+        "name": "primary_social_handle",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "nullable"
+      },
+      {
+        "name": "mfa_enabled",
+        "type": "BOOLEAN",
+        "nullable": true,
+        "default": "FALSE",
+        "comment": "issuers must enable MFA; fans optional"
+      },
+      {
+        "name": "account_status",
+        "type": "TEXT",
+        "nullable": true,
+        "default": "'ACTIVE'",
+        "comment": "'ACTIVE','LOCKED','DISABLED','PENDING_VERIFICATION'",
+        "suggested_values": [
+          "ACTIVE",
+          "LOCKED",
+          "DISABLED",
+          "PENDING_VERIFICATION"
+        ]
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "last_login_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "created_ip",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "created_user_agent",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "user_id"
+    ],
+    "unique_keys": [
+      [
+        "username"
+      ],
+      [
+        "email"
+      ]
+    ],
+    "foreign_keys": [],
+    "join_hints": [],
+    "time_columns": [
+      "created_at",
+      "updated_at",
+      "last_login_at"
+    ],
+    "taxonomy": {
+      "classification": "DIMENSION",
+      "data_type_notes": [
+        "Master entity (dimension table)"
+      ],
+      "measure_hints": [
+        "None (descriptive only)"
+      ],
+      "source_hints": [
+        "Created during signup"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "issuers",
+    "description": "Database table: issuers",
+    "columns": [
+      {
+        "name": "user_id",
+        "type": "VARCHAR(36)",
+        "nullable": true
+      },
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false,
+        "comment": "UUID PK"
+      },
+      {
+        "name": "issuer_type",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'ATHLETE' | 'CREATOR'",
+        "suggested_values": [
+          "ATHLETE",
+          "CREATOR"
+        ]
+      },
+      {
+        "name": "email",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "username",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "status",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'PENDING','ACTIVE','SUSPENDED','ARCHIVED'",
+        "suggested_values": [
+          "PENDING",
+          "ACTIVE",
+          "SUSPENDED",
+          "ARCHIVED"
+        ]
+      },
+      {
+        "name": "level",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'YOUTH','COLLEGE','PRO'",
+        "suggested_values": [
+          "YOUTH",
+          "COLLEGE",
+          "PRO"
+        ]
+      },
+      {
+        "name": "country",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "region",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "issuer_id"
+    ],
+    "unique_keys": [
+      [
+        "user_id"
+      ]
+    ],
+    "foreign_keys": [
+      {
+        "columns": [
+          "user_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "issuers.user_id = users.user_id"
+    ],
+    "time_columns": [
+      "created_at",
+      "updated_at"
+    ],
+    "taxonomy": {
+      "classification": "DIMENSION",
+      "data_type_notes": [
+        "Master entity"
+      ],
+      "measure_hints": [
+        "None directly"
+      ],
+      "source_hints": [
+        "Derived + onboarding process"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "athlete_profile",
+    "description": "Database table: athlete_profile",
+    "columns": [
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "user_id",
+        "type": "VARCHAR(36)",
+        "nullable": true
+      },
+      {
+        "name": "sport",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "team",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "league",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "position_primary",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "position_secondary",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "multi_sport",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "biography",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "profile_completion",
+        "type": "NUMERIC(5,2)",
+        "nullable": true,
+        "comment": "percent 0-100"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "issuer_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      },
+      {
+        "columns": [
+          "user_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "athlete_profile.issuer_id = issuers.issuer_id",
+      "athlete_profile.user_id = users.user_id"
+    ],
+    "time_columns": [
+      "created_at",
+      "updated_at"
+    ],
+    "taxonomy": {
+      "classification": "DIMENSION",
+      "data_type_notes": [],
+      "measure_hints": [
+        "None"
+      ],
+      "source_hints": [
+        "User input during onboarding"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "creator_profile",
+    "description": "Database table: creator_profile",
+    "columns": [
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "user_id",
+        "type": "VARCHAR(36)",
+        "nullable": true
+      },
+      {
+        "name": "creator_category",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "e.g., 'YouTuber','Streamer','Musician'",
+        "suggested_values": [
+          "YouTuber",
+          "Streamer",
+          "Musician"
+        ]
+      },
+      {
+        "name": "content_mediums",
+        "type": "TEXT[]",
+        "nullable": true,
+        "comment": "list of mediums (YouTube, TikTok, IG, etc.)"
+      },
+      {
+        "name": "niche",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "biography",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "profile_completion",
+        "type": "NUMERIC(5,2)",
+        "nullable": true,
+        "comment": "percent 0-100"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "issuer_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      },
+      {
+        "columns": [
+          "user_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "creator_profile.issuer_id = issuers.issuer_id",
+      "creator_profile.user_id = users.user_id"
+    ],
+    "time_columns": [
+      "created_at",
+      "updated_at"
+    ],
+    "taxonomy": {
+      "classification": "DIMENSION",
+      "data_type_notes": [],
+      "measure_hints": [],
+      "source_hints": []
+    }
+  },
+  {
+    "type": "table",
+    "table": "identity_verification",
+    "description": "IDENTITY & SOCIAL VERIFICATION",
+    "columns": [
+      {
+        "name": "identity_check_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": true
+      },
+      {
+        "name": "provider",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "e.g., 'Persona','Onfido'",
+        "suggested_values": [
+          "Persona",
+          "Onfido"
+        ]
+      },
+      {
+        "name": "status",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'INITIATED','PENDING','PASSED','FAILED','MANUAL_REVIEW'",
+        "suggested_values": [
+          "INITIATED",
+          "PENDING",
+          "PASSED",
+          "FAILED",
+          "MANUAL_REVIEW"
+        ]
+      },
+      {
+        "name": "level",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "optional verification level"
+      },
+      {
+        "name": "alias_confidence",
+        "type": "NUMERIC(5,2)",
+        "nullable": true,
+        "comment": "0-100"
+      },
+      {
+        "name": "opted_in",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "initiated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "completed_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "failure_reason",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "raw_response",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "identity_check_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "identity_verification.issuer_id = issuers.issuer_id"
+    ],
+    "time_columns": [
+      "initiated_at",
+      "completed_at"
+    ],
+    "taxonomy": {
+      "classification": "FACT - EVENT",
+      "data_type_notes": [],
+      "measure_hints": [
+        "alias_confidence (score)"
+      ],
+      "source_hints": [
+        "External provider (e.g. Persona)"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "social_verification",
+    "description": "Database table: social_verification",
+    "columns": [
+      {
+        "name": "social_verif_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": true
+      },
+      {
+        "name": "platform",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'YOUTUBE','TIKTOK','INSTAGRAM','TWITCH','X','FACEBOOK'",
+        "suggested_values": [
+          "YOUTUBE",
+          "TIKTOK",
+          "INSTAGRAM",
+          "TWITCH",
+          "X",
+          "FACEBOOK"
+        ]
+      },
+      {
+        "name": "handle",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "followers_count",
+        "type": "NUMERIC(38,0)",
+        "nullable": true
+      },
+      {
+        "name": "verified",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "initiated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "completed_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "attempts",
+        "type": "NUMERIC(38,0)",
+        "nullable": true
+      },
+      {
+        "name": "status",
+        "type": "TEXT",
+        "nullable": true,
+        "comment": "'SUCCESS','FAILED','PENDING'",
+        "suggested_values": [
+          "SUCCESS",
+          "FAILED",
+          "PENDING"
+        ]
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "social_verif_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "social_verification.issuer_id = issuers.issuer_id"
+    ],
+    "time_columns": [
+      "initiated_at",
+      "completed_at"
+    ],
+    "taxonomy": {
+      "classification": "FACT - EVENT",
+      "data_type_notes": [],
+      "measure_hints": [
+        "followers_count",
+        "verified (boolean)"
+      ],
+      "source_hints": [
+        "External APIs (YouTube, Instagram, etc.)"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "issuer_post_signup",
+    "description": "ONBOARDING / POST-SIGNUP",
+    "columns": [
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "wallet_provisioned",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "wallet_address",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "wallet_email_sent",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "dashboard_redirect",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "oauth_verified_min2",
+        "type": "BOOLEAN",
+        "nullable": true,
+        "comment": "verified at least 2 platforms"
+      },
+      {
+        "name": "verified_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "issuer_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "issuer_post_signup.issuer_id = issuers.issuer_id"
+    ],
+    "time_columns": [
+      "verified_at",
+      "created_at",
+      "updated_at"
+    ],
+    "taxonomy": {
+      "classification": "STATE",
+      "data_type_notes": [],
+      "measure_hints": [
+        "wallet_provisioned (boolean)",
+        "oauth_verified_min2 (boolean)"
+      ],
+      "source_hints": [
+        "System-generated during onboarding flow"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "issuer_preferences",
+    "description": "Database table: issuer_preferences",
+    "columns": [
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "raise_target_usd",
+        "type": "NUMERIC(38,6)",
+        "nullable": true
+      },
+      {
+        "name": "token_supply_goal",
+        "type": "NUMERIC(38,6)",
+        "nullable": true
+      },
+      {
+        "name": "enable_referrals",
+        "type": "BOOLEAN",
+        "nullable": true
+      },
+      {
+        "name": "notification_prefs",
+        "type": "JSONB",
+        "nullable": true
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "metadata",
+        "type": "JSONB",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "issuer_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "issuer_preferences.issuer_id = issuers.issuer_id"
+    ],
+    "time_columns": [
+      "created_at",
+      "updated_at"
+    ],
+    "taxonomy": {
+      "classification": "CONFIG",
+      "data_type_notes": [],
+      "measure_hints": [
+        "raise_target_usd",
+        "token_supply_goal"
+      ],
+      "source_hints": [
+        "Issuer input"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "tokens",
+    "description": "WALLET AND TOKENS",
+    "columns": [
+      {
+        "name": "token_id",
+        "type": "BIGINT",
+        "nullable": false,
+        "default": "AS IDENTITY PRIMARY KEY"
+      },
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "token_symbol",
+        "type": "TEXT",
+        "nullable": false
+      },
+      {
+        "name": "initial_supply",
+        "type": "NUMERIC(38,0)",
+        "nullable": false
+      },
+      {
+        "name": "current_supply_minted",
+        "type": "NUMERIC(38,0)",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "mint_timestamp",
+        "type": "TIMESTAMPTZ",
+        "nullable": true
+      },
+      {
+        "name": "paused_sales",
+        "type": "BOOLEAN",
+        "nullable": true,
+        "default": "FALSE"
+      },
+      {
+        "name": "secondary_trading_enabled",
+        "type": "BOOLEAN",
+        "nullable": true,
+        "default": "FALSE"
+      },
+      {
+        "name": "current_price",
+        "type": "NUMERIC(38,6)",
+        "nullable": true,
+        "default": "1.000000"
+      },
+      {
+        "name": "total_sold",
+        "type": "NUMERIC(38,0)",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "total_revenue",
+        "type": "NUMERIC(38,6)",
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "updated_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "primary_key": [
+      "token_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "issuers",
+        "references_columns": [
+          "issuer_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "tokens.issuer_id = issuers.issuer_id"
+    ],
+    "time_columns": [
+      "mint_timestamp",
+      "created_at",
+      "updated_at"
+    ],
+    "taxonomy": {
+      "classification": "STATE + DERIVED METRICS",
+      "data_type_notes": [
+        "Hybrid (entity + aggregated metrics)"
+      ],
+      "measure_hints": [
+        "initial_supply",
+        "numbers_sold",
+        "current_price",
+        "total_revenue_raised"
+      ],
+      "source_hints": []
+    }
+  },
+  {
+    "type": "table",
+    "table": "user_token_wallet",
+    "description": "Database table: user_token_wallet",
+    "columns": [
+      {
+        "name": "user_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "token_id",
+        "type": "BIGINT",
+        "nullable": false
+      },
+      {
+        "name": "quantity",
+        "type": "NUMERIC(38,0)",
+        "nullable": false
+      },
+      {
+        "name": "total_value",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      }
+    ],
+    "primary_key": [
+      "user_id",
+      "token_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "user_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      },
+      {
+        "columns": [
+          "token_id"
+        ],
+        "references_table": "tokens",
+        "references_columns": [
+          "token_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "user_token_wallet.user_id = users.user_id",
+      "user_token_wallet.token_id = tokens.token_id"
+    ],
+    "time_columns": [],
+    "taxonomy": {
+      "classification": "FACT - HOLDINGS",
+      "data_type_notes": [],
+      "measure_hints": [
+        "quantity",
+        "total_value"
+      ],
+      "source_hints": []
+    }
+  },
+  {
+    "type": "table",
+    "table": "user_wallet",
+    "description": "Database table: user_wallet",
+    "columns": [
+      {
+        "name": "wallet_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "user_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "eth_balance",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      },
+      {
+        "name": "usdc_balance",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      },
+      {
+        "name": "total_token_value",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      },
+      {
+        "name": "created_at",
+        "type": "TIMESTAMPTZ",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      }
+    ],
+    "primary_key": [
+      "wallet_id"
+    ],
+    "unique_keys": [
+      [
+        "user_id"
+      ]
+    ],
+    "foreign_keys": [
+      {
+        "columns": [
+          "user_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "user_wallet.user_id = users.user_id"
+    ],
+    "time_columns": [
+      "created_at"
+    ],
+    "taxonomy": {
+      "classification": "STATE SNAPSHOT",
+      "data_type_notes": [],
+      "measure_hints": [
+        "eth_balance",
+        "usdc_balance",
+        "total_token_value"
+      ],
+      "source_hints": []
+    }
+  },
+  {
+    "type": "table",
+    "table": "transactions",
+    "description": "Transactions (primary + secondary)",
+    "columns": [
+      {
+        "name": "transaction_id",
+        "type": "BIGINT",
+        "nullable": false,
+        "default": "AS IDENTITY PRIMARY KEY"
+      },
+      {
+        "name": "token_id",
+        "type": "BIGINT",
+        "nullable": false
+      },
+      {
+        "name": "buyer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "seller_id",
+        "type": "VARCHAR(36)",
+        "nullable": true,
+        "comment": "null for primary/platform sell"
+      },
+      {
+        "name": "quantity",
+        "type": "NUMERIC(38,0)",
+        "nullable": false
+      },
+      {
+        "name": "starting_price",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      },
+      {
+        "name": "ending_price",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      },
+      {
+        "name": "total_amount_usdc",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      },
+      {
+        "name": "transaction_type",
+        "type": "TEXT",
+        "nullable": false,
+        "comment": "'primary' only for now",
+        "suggested_values": [
+          "primary"
+        ]
+      },
+      {
+        "name": "swap_api_reference",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "original_currency",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "status",
+        "type": "TEXT",
+        "nullable": false
+      },
+      {
+        "name": "reversal_reason",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "timestamp",
+        "type": "TIMESTAMPTZ",
+        "nullable": true,
+        "default": "CURRENT_TIMESTAMP"
+      },
+      {
+        "name": "on_chain_tx_hash",
+        "type": "TEXT",
+        "nullable": true
+      },
+      {
+        "name": "merkle_proof_hash",
+        "type": "TEXT",
+        "nullable": true
+      }
+    ],
+    "primary_key": [
+      "transaction_id"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "token_id"
+        ],
+        "references_table": "tokens",
+        "references_columns": [
+          "token_id"
+        ]
+      },
+      {
+        "columns": [
+          "buyer_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      },
+      {
+        "columns": [
+          "seller_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "transactions.token_id = tokens.token_id",
+      "transactions.buyer_id = users.user_id",
+      "transactions.seller_id = users.user_id"
+    ],
+    "time_columns": [
+      "timestamp"
+    ],
+    "taxonomy": {
+      "classification": null,
+      "data_type_notes": [
+        "Event table (fact)"
+      ],
+      "measure_hints": [
+        "quantity",
+        "price_per_token",
+        "total_amount_usdc"
+      ],
+      "source_hints": [
+        "Generated simulation logic"
+      ]
+    }
+  },
+  {
+    "type": "table",
+    "table": "issuer_daily_revenue",
+    "description": "REVENUE AND EARNINGS",
+    "columns": [
+      {
+        "name": "issuer_id",
+        "type": "VARCHAR(36)",
+        "nullable": false
+      },
+      {
+        "name": "date",
+        "type": "DATE",
+        "nullable": false
+      },
+      {
+        "name": "total_amount_usdc",
+        "type": "NUMERIC(38,6)",
+        "nullable": false
+      }
+    ],
+    "primary_key": [
+      "issuer_id",
+      "date"
+    ],
+    "unique_keys": [],
+    "foreign_keys": [
+      {
+        "columns": [
+          "issuer_id"
+        ],
+        "references_table": "users",
+        "references_columns": [
+          "user_id"
+        ]
+      }
+    ],
+    "join_hints": [
+      "issuer_daily_revenue.issuer_id = users.user_id"
+    ],
+    "time_columns": [
+      "date"
+    ],
+    "taxonomy": {
+      "classification": "AGGREGATE FACT",
+      "data_type_notes": [],
+      "measure_hints": [
+        "total_amount_usdc"
+      ],
+      "source_hints": [
+        "Aggregated from transactions"
+      ]
+    }
+  }
+]

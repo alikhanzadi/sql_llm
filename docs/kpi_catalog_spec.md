@@ -67,6 +67,23 @@ Each KPI entry must include:
 
 This prevents KPI coupling from blocking broad SQL coverage.
 
+## Integration Guardrails and Examples
+
+- KPI match should be opt-in by confidence.
+- If confidence is low, do not force KPI route.
+- Never allow KPI context to override hard schema constraints.
+- For blocked KPIs, avoid generating fabricated SQL for unavailable data.
+- Log mapping decisions for debugging (`matched_kpi_id`, confidence, fallback reason).
+
+Example behavior:
+
+- Query: "What is ID verification pass rate by provider?"
+  - Expected path: KPI matched (`id_verification_pass_rate`) and used to guide SQL.
+- Query: "Show login attempts by day"
+  - Expected path: KPI matched but blocked (`login_attempt_volume`) -> return dependency warning.
+- Query: "Top tokens traded in the last 7 days"
+  - Expected path: KPI matched (`token_leaderboard_most_traded`) or schema fallback if confidence is low.
+
 ## Versioning
 
 - Store catalog in `app/rag/catalog/kpi_catalog.json`.

@@ -2,7 +2,7 @@ venv/
 .env
 /- for me/
 .streamlit/
-data/v1
+data/
 chroma_db/
 
 # macOS metadata

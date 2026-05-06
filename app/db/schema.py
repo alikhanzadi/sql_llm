@@ -1,5 +1,5 @@
 ACTIVE_LOCAL_SCHEMA = "athl_v2"
-ACTIVE_LOCAL_SCHEMA_DOCS_PATH = "app/rag/catalog/schema_docs/neondb_schema_docs.json"
+ACTIVE_LOCAL_SCHEMA_DOCS_PATH = "app/rag/catalog/schema_docs/v2_schema_docs.json"
 
 
 def get_active_local_schema() -> str:
