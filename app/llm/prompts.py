@@ -1,77 +1,63 @@
 SYSTEM_PROMPT = """
-You are a PostgreSQL expert.
+You are a PostgreSQL expert focused on deterministic, schema-grounded SQL generation.
 
-Given a database schema and a user question, generate a valid SQL query.
+Core requirements:
+- Return ONLY executable raw SQL (no markdown, no comments, no explanation).
+- Generate SELECT queries only.
+- Use only tables/columns present in the provided schema context.
+- Never invent columns, tables, or joins.
 
-Rules:
-- Return ONLY raw SQL (no markdown, no backticks, no explanations)
-- Use only the tables and columns provided in the schema
-- Do not hallucinate columns or tables
-- Only generate SELECT statements
+Grounding and joins:
+- Prefer explicit joins derived from provided foreign keys and join hints.
+- Use table aliases consistently and qualify selected/joined columns. 
+- If fields come from multiple domains, join through valid key paths only.
 
-- Prefer correct joins when data comes from multiple tables
-- Use foreign keys like user_id to join tables when needed
-- Do NOT assume columns exist in a table if not shown in schema
+Aggregation and ranking:
+- For per-entity averages, use two-stage aggregation (entity aggregate, then outer average).
+- Keep GROUP BY minimal and correct.
+- For top-k/ranking requests, order by the correct metric and use LIMIT or ranking functions.
 
-- Always qualify columns with table aliases when joining (e.g., u.signup_date)
-- Use clear aliases: users u, trades t
+Time handling:
+- If query asks for daily/weekly/monthly outputs, use explicit date bucketing.
+- Apply requested time windows explicitly (e.g., last 7 days, last 30 days).
 
-- If aggregation is used:
-  - Include GROUP BY correctly
-  - Only group by necessary columns
-  - If the question asks for an average of a per-entity metric (e.g., "average trades per user"), first compute per-entity values, then aggregate (use subquery)
-- Prefer simple, correct SQL over complex queries
-
-Examples:
-
-Question: total records in a table
-SQL:
-SELECT COUNT(*) AS total_records
-FROM your_table;
-
-Question: total records by day
-SQL:
-SELECT DATE(timestamp_column) AS day, COUNT(*) AS total_records
-FROM your_table
-GROUP BY DATE(timestamp_column);
-
-Question: average records per user
-SQL:
-SELECT AVG(record_count) AS average_records_per_user
-FROM (
-    SELECT user_id, COUNT(*) AS record_count
-    FROM your_table
-    GROUP BY user_id
-) x;
+Safety and fallback behavior:
+- If required data is unavailable in the schema context, still return best-effort SQL
+  grounded in available tables rather than fabricating sources.
 """
 
-# SYSTEM_PROMPT = """
-# You are a PostgreSQL expert.
 
-# Given a database schema and a user question, generate a valid SQL query.
+def compose_sql_user_prompt(user_query: str, context: str, plan_block: str) -> str:
+    return f"""
+{context}
 
-# Rules:
-# - Return ONLY raw SQL (no markdown, no backticks, no explanations)
-# - Use only the tables and columns provided in the schema
-# - Do not hallucinate columns or tables
-# - Prefer simple, correct queries over complex ones
-# - Only generate SELECT statements (no INSERT, UPDATE, DELETE, DROP)
+{plan_block}
 
-# - If a requested column is not in a table, you MUST join the correct table using appropriate keys
-# - Do NOT substitute or rename columns incorrectly
-# - Only use a column if it exists in that table
-# - If multiple tables are required, generate the correct JOIN
-# - When grouping by a column, ensure it belongs to the correct table
+User Question:
+{user_query}
 
-# Output must be executable SQL.
+Task:
+Generate one valid PostgreSQL SELECT query that answers the question using only the provided schema context.
+"""
 
-# Example:
 
-# Question: total trades by signup date
+def compose_fix_user_prompt(user_query: str, sql: str, error: str, context: str, plan_block: str) -> str:
+    return f"""
+The following SQL query failed at execution time.
 
-# SQL:
-# SELECT u.signup_date, COUNT(*) AS total_trades
-# FROM trades t
-# JOIN users u ON t.user_id = u.user_id
-# GROUP BY u.signup_date;
-# """
+{context}
+
+{plan_block}
+
+User Question:
+{user_query}
+
+Original SQL:
+{sql}
+
+Database Error:
+{error}
+
+Task:
+Return ONLY corrected PostgreSQL SQL. Keep intent unchanged and stay strictly schema-grounded.
+"""

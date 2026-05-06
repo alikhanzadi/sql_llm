@@ -2,7 +2,8 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-from .prompts import SYSTEM_PROMPT
+from .planner import plan_query
+from .prompts import SYSTEM_PROMPT, compose_fix_user_prompt, compose_sql_user_prompt
 
 load_dotenv()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -21,13 +22,13 @@ def clean_sql(response_text: str) -> str:
     )
 
 def generate_sql(user_query: str, context: str) -> str:
-    # Step 1: Construct prompt from already-retrieved context
-    prompt = f"""
-    {context}
-
-    User Question:
-    {user_query}
-    """
+    # Step 1: Build deterministic intent plan and prompt.
+    plan = plan_query(user_query)
+    prompt = compose_sql_user_prompt(
+        user_query=user_query,
+        context=context,
+        plan_block=plan.to_prompt_block(),
+    )
 
     # Step 2: Call LLM
     response = client.chat.completions.create(
@@ -50,24 +51,14 @@ def generate_sql(user_query: str, context: str) -> str:
 
 # def fix_sql(user_query: str, sql: str, error: str) -> str:
 def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
-    prompt = f"""
-The following SQL query failed.
-
-Relevant Database Schema:
-{context}
-
-User Question:
-{user_query}
-
-SQL:
-{sql}
-
-Error:
-{error}
-
-Fix the SQL query.
-Return ONLY corrected SQL.
-"""
+    plan = plan_query(user_query)
+    prompt = compose_fix_user_prompt(
+        user_query=user_query,
+        sql=sql,
+        error=error,
+        context=context,
+        plan_block=plan.to_prompt_block(),
+    )
 
     response = client.chat.completions.create(
         model="gpt-4o-mini",
