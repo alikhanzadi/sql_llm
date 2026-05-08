@@ -564,3 +564,14 @@ LIMIT 1;
 2026-05-06 00:57:35,308 - RESULT: [RealDictRow([('issuer_id', '78ae857d-0ad1-4179-9261-9c0eef2c7f98'), ('total_revenue', Decimal('2006.768470'))])]
 2026-05-06 00:57:35,308 - ----
 2026-05-06 00:57:37,724 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-06 08:42:48,963 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-06 08:42:51,726 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-06 08:42:51,852 - QUESTION: Whats token has the most growth?
+2026-05-06 08:42:51,852 - SQL: SELECT t.token_id, t.token_symbol, (t.current_supply_minted - t.initial_supply) AS growth
+FROM tokens t
+WHERE t.current_supply_minted IS NOT NULL
+ORDER BY growth DESC
+LIMIT 1;
+2026-05-06 08:42:51,852 - RESULT: [RealDictRow([('token_id', 133), ('token_symbol', 'TOKEN_1888'), ('growth', Decimal('-105725'))])]
+2026-05-06 08:42:51,852 - ----
+2026-05-06 08:42:54,082 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

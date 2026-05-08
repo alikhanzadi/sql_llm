@@ -27,11 +27,15 @@ Safety and fallback behavior:
 """
 
 
-def compose_sql_user_prompt(user_query: str, context: str, plan_block: str) -> str:
+def compose_sql_user_prompt(
+    user_query: str, context: str, plan_block: str, kpi_block: str = ""
+) -> str:
     return f"""
 {context}
 
 {plan_block}
+
+{kpi_block}
 
 User Question:
 {user_query}
@@ -41,13 +45,22 @@ Generate one valid PostgreSQL SELECT query that answers the question using only 
 """
 
 
-def compose_fix_user_prompt(user_query: str, sql: str, error: str, context: str, plan_block: str) -> str:
+def compose_fix_user_prompt(
+    user_query: str,
+    sql: str,
+    error: str,
+    context: str,
+    plan_block: str,
+    kpi_block: str = "",
+) -> str:
     return f"""
 The following SQL query failed at execution time.
-
+  
 {context}
 
 {plan_block}
+
+{kpi_block}
 
 User Question:
 {user_query}

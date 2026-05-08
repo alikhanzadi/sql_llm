@@ -27,7 +27,7 @@ if "history" not in st.session_state:
 # -------------------------
 st.set_page_config(page_title="ATHL Analytics", layout="wide")
 
-st.title("AthenaIQ")
+st.title("ATHL Analytics")
 st.caption("Ask questions about your data using AI")
 
 # Keep embeddings aligned with the active schema docs.
