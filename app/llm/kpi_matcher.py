@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import re
+from typing import Optional
 
 from app.rag.catalog.kpi_catalog import load_kpi_catalog
 
@@ -14,10 +15,10 @@ class KpiMatchDecision:
     matched: bool
     confidence: float
     reason: str
-    kpi_id: str | None = None
-    status: str | None = None
+    kpi_id: Optional[str] = None
+    status: Optional[str] = None
     missing_dependencies: list[str] = field(default_factory=list)
-    kpi: dict | None = None
+    kpi: Optional[dict] = None
 
     def to_prompt_block(self) -> str:
         if not self.matched or not self.kpi:

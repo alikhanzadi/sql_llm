@@ -575,3 +575,10 @@ LIMIT 1;
 2026-05-06 08:42:51,852 - RESULT: [RealDictRow([('token_id', 133), ('token_symbol', 'TOKEN_1888'), ('growth', Decimal('-105725'))])]
 2026-05-06 08:42:51,852 - ----
 2026-05-06 08:42:54,082 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-08 12:17:15,834 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-08 12:17:17,110 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-08 12:17:17,262 - QUESTION: How many athletes do we have?
+2026-05-08 12:17:17,263 - SQL: SELECT COUNT(*) AS athlete_count FROM athlete_profile LIMIT 10;
+2026-05-08 12:17:17,263 - RESULT: [RealDictRow([('athlete_count', 107)])]
+2026-05-08 12:17:17,263 - ----
+2026-05-08 12:17:19,035 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

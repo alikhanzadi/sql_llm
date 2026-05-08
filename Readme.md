@@ -225,71 +225,71 @@ It bridges:
 **Ali Khanzadi**
 
 # Conceptual Architecture
-
-                ┌──────────────────────────┐
-                │        User (UI)         │
-                │    Streamlit (ui.py)     │
-                └────────────┬─────────────┘
-                             │ user question
-                             ↓
-                ┌──────────────────────────┐
-                │   Retriever (RAG)        │
-                │   retriever.py           │
-                └────────────┬─────────────┘
-                             │
-        ┌────────────────────┴────────────────────┐
-        │                                         │
-        ↓                                         ↓
-┌──────────────────────┐             ┌────────────────────────┐
-│ schema_docs.json     │             │ vector_store.py        │
-│ (data source)        │             │ Chroma DB              │
-└──────────┬───────────┘             └──────────┬─────────────┘
-           │                                    │
-           │ load + format                      │ similarity search
-           ↓                                    ↓
-     ┌────────────────────────────────────────────┐
-     │ embeddings.py                              │
-     │ → text chunks + embeddings                 │
-     └────────────────────────────────────────────┘
-                             │
-                             ↓
-                ┌──────────────────────────┐
-                │  context_builder.py      │
-                │  → clean schema context  │
-                └────────────┬─────────────┘
-                             │
-                             ↓
-                ┌──────────────────────────┐
-                │   generate_sql.py        │
-                │   (LLM)                  │
-                └────────────┬─────────────┘
-                             │ SQL
-                             ↓
-                ┌──────────────────────────┐
-                │   validator.py           │
-                │   → safe SQL only        │
-                └────────────┬─────────────┘
-                             │
-                             ↓
-                ┌──────────────────────────┐
-                │   query_runner.py        │
-                │   → Postgres execution   │
-                └────────────┬─────────────┘
-                             │ results / error
-                 ┌───────────┴────────────┐
-                 ↓                        ↓
-   ┌──────────────────────────┐   ┌──────────────────────────┐
-   │ explain_results.py       │   │ generate_sql.fix_sql()   │
-   │ → natural language       │   │ → retry on failure       │
-   └────────────┬─────────────┘   └────────────┬─────────────┘
-                │                              │
-                └──────────────┬───────────────┘
-                               ↓
-                ┌──────────────────────────┐
-                │ UI (Streamlit)           │
-                │ → SQL + table + explain  │
-                └──────────────────────────┘
-
+        
+                        ┌──────────────────────────┐
+                        │        User (UI)         │
+                        │    Streamlit (ui.py)     │
+                        └────────────┬─────────────┘
+                                     │ user question
+                                     ↓
+                        ┌──────────────────────────┐
+                        │   Retriever (RAG)        │
+                        │   retriever.py           │
+                        └────────────┬─────────────┘
+                                     │
+                ┌────────────────────┴────────────────────┐
+                │                                         │
+                ↓                                         ↓
+        ┌──────────────────────┐             ┌────────────────────────┐
+        │ schema_docs.json     │             │ vector_store.py        │
+        │ (data source)        │             │ Chroma DB              │
+        └──────────┬───────────┘             └──────────┬─────────────┘
+                   │                                    │
+                   │ load + format                      │ similarity search
+                   ↓                                    ↓
+             ┌────────────────────────────────────────────┐
+             │ embeddings.py                              │
+             │ → text chunks + embeddings                 │
+             └────────────────────────────────────────────┘
+                                     │
+                                     ↓
+                        ┌──────────────────────────┐
+                        │  context_builder.py      │
+                        │  → clean schema context  │
+                        └────────────┬─────────────┘
+                                     │
+                                     ↓
+                        ┌──────────────────────────┐
+                        │   generate_sql.py        │
+                        │   (LLM)                  │
+                        └────────────┬─────────────┘
+                                     │ SQL
+                                     ↓
+                        ┌──────────────────────────┐
+                        │   validator.py           │
+                        │   → safe SQL only        │
+                        └────────────┬─────────────┘
+                                     │
+                                     ↓
+                        ┌──────────────────────────┐
+                        │   query_runner.py        │
+                        │   → Postgres execution   │
+                        └────────────┬─────────────┘
+                                     │ results / error
+                         ┌───────────┴────────────┐
+                         ↓                        ↓
+           ┌──────────────────────────┐   ┌──────────────────────────┐
+           │ explain_results.py       │   │ generate_sql.fix_sql()   │
+           │ → natural language       │   │ → retry on failure       │
+           └────────────┬─────────────┘   └────────────┬─────────────┘
+                        │                              │
+                        └──────────────┬───────────────┘
+                                       ↓
+                        ┌──────────────────────────┐
+                        │ UI (Streamlit)           │
+                        │ → SQL + table + explain  │
+                        └──────────────────────────┘
+        
 Key clarifications
 * schema_docs.json is the semantic layer (tables + metrics)
 * embeddings.py converts schema → vectors
@@ -305,72 +305,72 @@ Key clarifications
 # Execution Pipeline (Function-Level Flow when main.py runs)
 
 This shows actual function calls and interactions.
-User Input (Streamlit UI)
-        │
-        ↓
-retrieve_relevant_docs(question)
-        │
-        ├── load_schema_docs()                [embeddings.py]
-        ├── format_doc()
-        ├── OpenAI embeddings (question)
-        ├── get_collection()                 [vector_store.py]
-        ├── query_collection()
-        └── return relevant docs
-        │
-        ↓
-build_context(docs)                          [context_builder.py]
-        │
-        └── returns formatted schema text
-        │
-        ↓
-generate_sql(question)                       [generate_sql.py]
-        │
-        ├── retrieve_relevant_docs()   (called AGAIN internally)
-        ├── build_context()
-        ├── construct prompt
-        ├── OpenAI chat.completions()
-        └── clean_sql()
-        │
-        ↓
-validate_sql(sql)                            [validator.py]
-        │
-        ├── check starts with SELECT
-        └── block unsafe keywords
-        │
-        ↓
-enforce_limit(sql)
-        │
-        └── append LIMIT if missing
-        │
-        ↓
-PostgresClient.run_query(sql)                [query_runner.py]
-        │
-        ├── psycopg2 execute
-        └── return results OR error
-        │
-        ├───────────────┐
-        │               │
-        ↓               ↓
-SUCCESS           ERROR PATH
-        │               │
-        │         fix_sql(question, sql, error, context)
-        │               │
-        │         ├── OpenAI call
-        │         └── corrected SQL
-        │               │
-        │         run_query() again
-        │
-        ↓
-explain_results(question, sql, results)      [explain_results.py]
-        │
-        └── OpenAI explanation
-        │
-        ↓
-Streamlit UI Rendering
-        ├── SQL
-        ├── DataFrame
-        ├── Explanation
-        └── Debug context
+        User Input (Streamlit UI)
+                │
+                ↓
+        retrieve_relevant_docs(question)
+                │
+                ├── load_schema_docs()                [embeddings.py]
+                ├── format_doc()
+                ├── OpenAI embeddings (question)
+                ├── get_collection()                 [vector_store.py]
+                ├── query_collection()
+                └── return relevant docs
+                │
+                ↓
+        build_context(docs)                          [context_builder.py]
+                │
+                └── returns formatted schema text
+                │
+                ↓
+        generate_sql(question)                       [generate_sql.py]
+                │
+                ├── retrieve_relevant_docs()   (called AGAIN internally)
+                ├── build_context()
+                ├── construct prompt
+                ├── OpenAI chat.completions()
+                └── clean_sql()
+                │
+                ↓
+        validate_sql(sql)                            [validator.py]
+                │
+                ├── check starts with SELECT
+                └── block unsafe keywords
+                │
+                ↓
+        enforce_limit(sql)
+                │
+                └── append LIMIT if missing
+                │
+                ↓
+        PostgresClient.run_query(sql)                [query_runner.py]
+                │
+                ├── psycopg2 execute
+                └── return results OR error
+                │
+                ├───────────────┐
+                │               │
+                ↓               ↓
+        SUCCESS           ERROR PATH
+                │               │
+                │         fix_sql(question, sql, error, context)
+                │               │
+                │         ├── OpenAI call
+                │         └── corrected SQL
+                │               │
+                │         run_query() again
+                │
+                ↓
+        explain_results(question, sql, results)      [explain_results.py]
+                │
+                └── OpenAI explanation
+                │
+               ↓
+        Streamlit UI Rendering
+                ├── SQL
+                ├── DataFrame
+                ├── Explanation
+                └── Debug context
 
 --------------
 FROM DAY 11

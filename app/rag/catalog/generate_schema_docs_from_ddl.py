@@ -2,6 +2,7 @@ import argparse
 import json
 import re
 from pathlib import Path
+from typing import Optional
 
 
 CREATE_TABLE_RE = re.compile(
@@ -136,7 +137,7 @@ def parse_taxonomy_info(taxonomy_text: str) -> dict:
     return info
 
 
-def parse_sql_to_schema_docs(sql_text: str, taxonomy_info: dict | None = None) -> list[dict]:
+def parse_sql_to_schema_docs(sql_text: str, taxonomy_info: Optional[dict] = None) -> list[dict]:
     docs: list[dict] = []
     taxonomy_info = taxonomy_info or {}
 
