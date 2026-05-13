@@ -4,3 +4,5 @@ venv/
 .streamlit/
 data/v1
 chroma_db/
+*.pyc
+__pycache__/
