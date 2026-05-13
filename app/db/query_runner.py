@@ -6,6 +6,7 @@ import streamlit as st
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from urllib.parse import urlparse
 
 class PostgresClient:
     def __init__(self):
@@ -23,14 +24,25 @@ class PostgresClient:
             else:
                 creds = st.secrets["postgres_local"]
         except Exception:
-            # fallback for local CLI runs
-            creds = {
-                "host": os.getenv("POSTGRES_HOST"),
-                "port": os.getenv("POSTGRES_PORT"),
-                "database": os.getenv("POSTGRES_DB"),
-                "user": os.getenv("POSTGRES_USER"),
-                "password": os.getenv("POSTGRES_PASSWORD"),
-            }
+            # fallback for local CLI runs — prefer DATABASE_URL if set
+            database_url = os.getenv("DATABASE_URL")
+            if database_url:
+                parsed = urlparse(database_url)
+                creds = {
+                    "host": parsed.hostname,
+                    "port": parsed.port or 5432,
+                    "database": parsed.path.lstrip("/"),
+                    "user": parsed.username,
+                    "password": parsed.password,
+                }
+            else:
+                creds = {
+                    "host": os.getenv("POSTGRES_HOST"),
+                    "port": os.getenv("POSTGRES_PORT"),
+                    "database": os.getenv("POSTGRES_DB"),
+                    "user": os.getenv("POSTGRES_USER"),
+                    "password": os.getenv("POSTGRES_PASSWORD"),
+                }
         # # 1. Get the credentials (wherever they are)
         # creds = st.secrets["postgres"]
 
