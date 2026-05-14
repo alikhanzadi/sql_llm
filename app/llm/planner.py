@@ -69,6 +69,16 @@ def _normalize(text: str) -> str:
     return " ".join(text.lower().strip().split())
 
 
+def _word_tokens(text: str) -> set[str]:
+    return set(re.findall(r"[a-z0-9_]+", text))
+
+
+def _contains_keyword(query: str, keyword: str) -> bool:
+    if " " in keyword:
+        return keyword in query
+    return keyword in _word_tokens(query)
+
+
 def _extract_top_k(query: str) -> Optional[int]:
     number_match = re.search(r"\btop\s+(\d+)\b", query)
     if number_match:
@@ -79,8 +89,13 @@ def _extract_top_k(query: str) -> Optional[int]:
 
 
 def _detect_time_grain(query: str) -> str:
+    if re.search(r"\b(last|past)\s+7\s+day[s]?\b", query):
+        return "week"
+    if re.search(r"\b(last|past)\s+30\s+day[s]?\b", query):
+        return "month"
+
     for grain, keywords in TIME_GRAIN_KEYWORDS.items():
-        if any(keyword in query for keyword in keywords):
+        if any(_contains_keyword(query, keyword) for keyword in keywords):
             return grain
     return "all_time"
 
@@ -88,7 +103,7 @@ def _detect_time_grain(query: str) -> str:
 def _detect_entities(query: str) -> list[str]:
     entities = []
     for entity, terms in ENTITY_TERMS.items():
-        if any(term in query for term in terms):
+        if any(_contains_keyword(query, term) for term in terms):
             entities.append(entity)
     return entities
 
@@ -96,7 +111,7 @@ def _detect_entities(query: str) -> list[str]:
 def _detect_intent(query: str) -> str:
     for intent in INTENT_PRIORITY:
         keywords = INTENT_KEYWORDS.get(intent, set())
-        if any(keyword in query for keyword in keywords):
+        if any(_contains_keyword(query, keyword) for keyword in keywords):
             return intent
     return "join_lookup"
 

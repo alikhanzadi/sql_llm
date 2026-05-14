@@ -1402,5 +1402,289 @@
         "Aggregated from transactions"
       ]
     }
+  },
+  {
+    "type": "metric",
+    "name": "Total Revenue (Lifetime)",
+    "definition": "Sum of all completed primary sales for an issuer.",
+    "formula": "SUM(transactions.total_amount_usdc)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.total_amount_usdc", "transactions.transaction_type", "transactions.status", "transactions.seller_id"],
+    "group_by": ["transactions.seller_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Daily Revenue",
+    "definition": "Daily revenue amount by issuer.",
+    "formula": "SUM(issuer_daily_revenue.total_amount_usdc)",
+    "required_tables": ["issuer_daily_revenue"],
+    "required_columns": ["issuer_daily_revenue.issuer_id", "issuer_daily_revenue.date", "issuer_daily_revenue.total_amount_usdc"],
+    "group_by": ["issuer_daily_revenue.issuer_id", "issuer_daily_revenue.date"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Tokens Issued (Count)",
+    "definition": "Count of tokens issued by an issuer.",
+    "formula": "COUNT(tokens.token_id)",
+    "required_tables": ["tokens"],
+    "required_columns": ["tokens.token_id", "tokens.issuer_id"],
+    "group_by": ["tokens.issuer_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Total Supply Issued",
+    "definition": "Total initial token supply issued by an issuer.",
+    "formula": "SUM(tokens.initial_supply)",
+    "required_tables": ["tokens"],
+    "required_columns": ["tokens.initial_supply", "tokens.issuer_id"],
+    "group_by": ["tokens.issuer_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Tokens Sold",
+    "definition": "Total token quantity sold by issuer.",
+    "formula": "SUM(transactions.quantity)",
+    "required_tables": ["transactions", "tokens"],
+    "required_columns": ["transactions.quantity", "transactions.token_id", "tokens.issuer_id"],
+    "group_by": ["tokens.issuer_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Sell-through Rate",
+    "definition": "Share of issued supply that has been sold.",
+    "formula": "SUM(transactions.quantity) / SUM(tokens.initial_supply)",
+    "required_tables": ["transactions", "tokens"],
+    "required_columns": ["transactions.quantity", "transactions.token_id", "tokens.initial_supply", "tokens.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Average Selling Price (ASP)",
+    "definition": "Average realized price per token sold.",
+    "formula": "SUM(transactions.total_amount_usdc) / NULLIF(SUM(transactions.quantity), 0)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.total_amount_usdc", "transactions.quantity"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Latest Price",
+    "definition": "Most recent token price from latest transaction ending price or token snapshot.",
+    "formula": "MAX_BY(transactions.ending_price, transactions.timestamp) or tokens.current_price",
+    "required_tables": ["transactions", "tokens"],
+    "required_columns": ["transactions.ending_price", "transactions.timestamp", "tokens.current_price", "tokens.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Numbers Sold",
+    "definition": "Total number of tokens sold per token.",
+    "formula": "SUM(transactions.quantity)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.quantity", "transactions.token_id"],
+    "group_by": ["transactions.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Current Price (Last Sold)",
+    "definition": "Current token price using latest ending price or token current_price.",
+    "formula": "MAX_BY(transactions.ending_price, transactions.timestamp) or tokens.current_price",
+    "required_tables": ["transactions", "tokens"],
+    "required_columns": ["transactions.ending_price", "transactions.timestamp", "tokens.current_price", "tokens.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Next Price (Marginal)",
+    "definition": "Next marginal token price on bonding curve.",
+    "formula": "1 + tokens.total_sold * 0.000023",
+    "required_tables": ["tokens"],
+    "required_columns": ["tokens.total_sold"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Total Revenue Raised",
+    "definition": "Total revenue raised by token.",
+    "formula": "SUM(transactions.total_amount_usdc)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.total_amount_usdc", "transactions.token_id"],
+    "group_by": ["transactions.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Average Price",
+    "definition": "Average transaction price per token quantity.",
+    "formula": "SUM(transactions.total_amount_usdc) / NULLIF(SUM(transactions.quantity), 0)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.total_amount_usdc", "transactions.quantity", "transactions.token_id"],
+    "group_by": ["transactions.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Volume",
+    "definition": "Total token quantity traded.",
+    "formula": "SUM(transactions.quantity)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.quantity", "transactions.token_id"],
+    "group_by": ["transactions.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Number of Buyers",
+    "definition": "Distinct buyers per token.",
+    "formula": "COUNT(DISTINCT transactions.buyer_id)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.buyer_id", "transactions.token_id"],
+    "group_by": ["transactions.token_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Tokens Held",
+    "definition": "Total quantity of tokens held per user.",
+    "formula": "SUM(user_token_wallet.quantity)",
+    "required_tables": ["user_token_wallet"],
+    "required_columns": ["user_token_wallet.user_id", "user_token_wallet.quantity"],
+    "group_by": ["user_token_wallet.user_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Total Token Portfolio Value",
+    "definition": "Total portfolio value across held tokens per user.",
+    "formula": "SUM(user_token_wallet.total_value) or user_wallet.total_token_value",
+    "required_tables": ["user_token_wallet", "user_wallet"],
+    "required_columns": ["user_token_wallet.total_value", "user_token_wallet.user_id", "user_wallet.total_token_value", "user_wallet.user_id"],
+    "group_by": ["user_wallet.user_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "USDC Balance",
+    "definition": "User USDC balance snapshot.",
+    "formula": "user_wallet.usdc_balance",
+    "required_tables": ["user_wallet"],
+    "required_columns": ["user_wallet.user_id", "user_wallet.usdc_balance"],
+    "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "ETH Balance",
+    "definition": "User ETH balance snapshot.",
+    "formula": "user_wallet.eth_balance",
+    "required_tables": ["user_wallet"],
+    "required_columns": ["user_wallet.user_id", "user_wallet.eth_balance"],
+    "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Number of Tokens Owned",
+    "definition": "Distinct number of token positions per user.",
+    "formula": "COUNT(DISTINCT user_token_wallet.token_id)",
+    "required_tables": ["user_token_wallet"],
+    "required_columns": ["user_token_wallet.user_id", "user_token_wallet.token_id"],
+    "group_by": ["user_token_wallet.user_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Total Purchases",
+    "definition": "Total purchase value per user.",
+    "formula": "SUM(transactions.total_amount_usdc)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.buyer_id", "transactions.total_amount_usdc"],
+    "group_by": ["transactions.buyer_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Total Platform Revenue",
+    "definition": "Total revenue generated across all transactions.",
+    "formula": "SUM(transactions.total_amount_usdc)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.total_amount_usdc"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Active Users",
+    "definition": "Distinct users who participated as buyers in transactions.",
+    "formula": "COUNT(DISTINCT transactions.buyer_id)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.buyer_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Participation Rate",
+    "definition": "Share of users participating in trading.",
+    "formula": "COUNT(DISTINCT transactions.buyer_id) / COUNT(DISTINCT users.user_id)",
+    "required_tables": ["transactions", "users"],
+    "required_columns": ["transactions.buyer_id", "users.user_id"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Total Tokens Sold",
+    "definition": "Total quantity sold across platform.",
+    "formula": "SUM(transactions.quantity)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.quantity"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Average Transaction Size",
+    "definition": "Average transaction notional in USDC.",
+    "formula": "AVG(transactions.total_amount_usdc)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.total_amount_usdc"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Average Tokens per Transaction",
+    "definition": "Average token quantity per transaction.",
+    "formula": "AVG(transactions.quantity)",
+    "required_tables": ["transactions"],
+    "required_columns": ["transactions.quantity"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"]
+  },
+  {
+    "type": "metric",
+    "name": "Price at n",
+    "definition": "Bonding-curve price for nth token.",
+    "formula": "price(n) = 1 + (n - 1) * 0.000023",
+    "required_tables": ["tokens"],
+    "required_columns": ["tokens.total_sold"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Pricing (Bonding Curve)"]
+  },
+  {
+    "type": "metric",
+    "name": "Batch Cost",
+    "definition": "Cost from token index a to b on bonding curve.",
+    "formula": "cost(a -> b) = total_cost(b) - total_cost(a - 1)",
+    "required_tables": ["transactions", "tokens"],
+    "required_columns": ["transactions.quantity", "transactions.total_amount_usdc", "tokens.total_sold"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Pricing (Bonding Curve)"]
+  },
+  {
+    "type": "metric",
+    "name": "Revenue Consistency Check",
+    "definition": "Validation that transaction revenue aligns with bonding-curve expected totals.",
+    "formula": "SUM(transactions.total_amount_usdc) ~= derived curve total",
+    "required_tables": ["transactions", "tokens"],
+    "required_columns": ["transactions.total_amount_usdc", "transactions.quantity", "tokens.total_sold"],
+    "source_refs": ["docs/database_schema_taxonomy.md: Pricing (Bonding Curve)"]
   }
 ]

@@ -582,3 +582,61 @@ LIMIT 1;
 2026-05-08 12:17:17,263 - RESULT: [RealDictRow([('athlete_count', 107)])]
 2026-05-08 12:17:17,263 - ----
 2026-05-08 12:17:19,035 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-12 20:50:38,840 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-12 20:50:42,112 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-12 20:50:42,367 - QUESTION: How many tokens have been traded on average per day and how does it compare with the median traded per day?
+2026-05-12 20:50:42,367 - SQL: SELECT 
+    AVG(daily_trades.trade_count) AS average_traded_per_day,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY daily_trades.trade_count) AS median_traded_per_day
+FROM (
+    SELECT 
+        tokens.token_id,
+        COUNT(transactions.transaction_id) AS trade_count
+    FROM 
+        transactions
+    JOIN 
+        tokens ON transactions.token_id = tokens.token_id
+    WHERE 
+        transactions.timestamp >= NOW() - INTERVAL '7 days'
+    GROUP BY 
+        tokens.token_id, DATE(transactions.timestamp)
+) AS daily_trades LIMIT 10;
+2026-05-12 20:50:42,367 - RESULT: [RealDictRow([('average_traded_per_day', None), ('median_traded_per_day', None)])]
+2026-05-12 20:50:42,367 - ----
+2026-05-12 20:50:44,076 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-12 21:05:28,594 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-12 21:05:30,905 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-12 21:05:31,000 - QUESTION: How many tokens have been traded on average per day and how does it compare with the median traded per day?
+2026-05-12 21:05:31,000 - SQL: SELECT 
+    AVG(daily_trades.token_count) AS average_traded_per_day,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY daily_trades.token_count) AS median_traded_per_day
+FROM (
+    SELECT 
+        DATE(timestamp) AS trade_date,
+        COUNT(DISTINCT token_id) AS token_count
+    FROM 
+        transactions
+    GROUP BY 
+        DATE(timestamp)
+) AS daily_trades LIMIT 10;
+2026-05-12 21:05:31,000 - RESULT: [RealDictRow([('average_traded_per_day', Decimal('96.6748633879781421')), ('median_traded_per_day', 97.0)])]
+2026-05-12 21:05:31,000 - ----
+2026-05-12 21:05:33,155 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-13 00:41:48,674 - HTTP Request: POST https://api.openai.com/v1/embeddings "HTTP/1.1 200 OK"
+2026-05-13 00:41:51,710 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"
+2026-05-13 00:41:51,888 - QUESTION: How many tokens have been traded on average per day and how does it compare with the median traded per day?
+2026-05-13 00:41:51,888 - SQL: SELECT 
+    AVG(daily_traded.total_quantity) AS avg_tokens_traded_per_day,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY daily_traded.total_quantity) AS median_tokens_traded_per_day
+FROM (
+    SELECT 
+        DATE(transactions.timestamp) AS trade_date,
+        SUM(transactions.quantity) AS total_quantity
+    FROM 
+        transactions
+    GROUP BY 
+        DATE(transactions.timestamp)
+) AS daily_traded LIMIT 10;
+2026-05-13 00:41:51,888 - RESULT: [RealDictRow([('avg_tokens_traded_per_day', Decimal('5689.8032786885245902')), ('median_tokens_traded_per_day', 5671.0)])]
+2026-05-13 00:41:51,888 - ----
+2026-05-13 00:41:53,405 - HTTP Request: POST https://api.openai.com/v1/chat/completions "HTTP/1.1 200 OK"

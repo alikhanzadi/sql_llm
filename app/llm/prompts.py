@@ -16,10 +16,17 @@ Aggregation and ranking:
 - For per-entity averages, use two-stage aggregation (entity aggregate, then outer average).
 - Keep GROUP BY minimal and correct.
 - For top-k/ranking requests, order by the correct metric and use LIMIT or ranking functions.
+- If a Metric Resolution block is provided, treat its sql_expression as authoritative.
+- Metric semantics defaults:
+  - "how many tokens traded" => SUM(transactions.quantity)
+  - "how many trades" => COUNT(transactions.transaction_id)
 
 Time handling:
 - If query asks for daily/weekly/monthly outputs, use explicit date bucketing.
 - Apply requested time windows explicitly (e.g., last 7 days, last 30 days).
+- Do not add a time window unless the user explicitly requests one.
+- If a relative window is requested (e.g., last 7 days) and table freshness may lag,
+  anchor the window to available data (MAX timestamp/date in the table) rather than NOW().
 
 Safety and fallback behavior:
 - If required data is unavailable in the schema context, still return best-effort SQL
@@ -28,7 +35,11 @@ Safety and fallback behavior:
 
 
 def compose_sql_user_prompt(
-    user_query: str, context: str, plan_block: str, kpi_block: str = ""
+    user_query: str,
+    context: str,
+    plan_block: str,
+    kpi_block: str = "",
+    metric_block: str = "",
 ) -> str:
     return f"""
 {context}
@@ -36,6 +47,8 @@ def compose_sql_user_prompt(
 {plan_block}
 
 {kpi_block}
+
+{metric_block}
 
 User Question:
 {user_query}
@@ -52,6 +65,7 @@ def compose_fix_user_prompt(
     context: str,
     plan_block: str,
     kpi_block: str = "",
+    metric_block: str = "",
 ) -> str:
     return f"""
 The following SQL query failed at execution time.
@@ -61,6 +75,8 @@ The following SQL query failed at execution time.
 {plan_block}
 
 {kpi_block}
+
+{metric_block}
 
 User Question:
 {user_query}
