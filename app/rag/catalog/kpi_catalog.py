@@ -4,6 +4,7 @@ from pathlib import Path
 
 VALID_STATUS = {"active", "draft", "blocked_by_missing_data"}
 VALID_TIME_GRAINS = {"day", "week", "month", "all_time"}
+VALID_TIERS = {"tier_1", "tier_2"}
 
 REQUIRED_FIELDS = {
     "kpi_id",
@@ -35,6 +36,9 @@ def _validate_entry(entry: dict):
 
     if entry["status"] not in VALID_STATUS:
         raise ValueError(f"KPI '{entry['kpi_id']}' has invalid status: {entry['status']}")
+
+    if "tier" in entry and entry["tier"] not in VALID_TIERS:
+        raise ValueError(f"KPI '{entry['kpi_id']}' has invalid tier: {entry['tier']}")
 
     invalid_grains = [g for g in entry["time_grains"] if g not in VALID_TIME_GRAINS]
     if invalid_grains:

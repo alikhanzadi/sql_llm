@@ -7,11 +7,14 @@ from app.rag.catalog.kpi_catalog import load_kpi_catalog
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+")
 MATCH_THRESHOLD = 0.58
-AMBIGUOUS_MARGIN = 0.06
+AMBIGUOUS_MARGIN = 0.03
+LEADERBOARD_TERMS = {"top", "rank", "ranking", "highest", "lowest", "most", "least", "leaderboard"}
 
 
 @dataclass
 class KpiMatchDecision:
+    """Structured outcome for KPI matching and downstream prompt routing."""
+
     matched: bool
     confidence: float
     reason: str
@@ -21,6 +24,7 @@ class KpiMatchDecision:
     kpi: Optional[dict] = None
 
     def to_prompt_block(self) -> str:
+        """Return canonical KPI context for prompting only when match is active."""
         if not self.matched or not self.kpi:
             return ""
         if self.status != "active":
@@ -43,6 +47,7 @@ class KpiMatchDecision:
         )
 
     def blocked_message(self) -> str:
+        """Build user-safe message for KPIs blocked by missing data dependencies."""
         deps = ", ".join(self.missing_dependencies) or "required source tables/events"
         return (
             f"KPI '{self.kpi_id}' is blocked_by_missing_data. "
@@ -51,10 +56,12 @@ class KpiMatchDecision:
 
 
 def _norm(text: str) -> str:
+    """Lowercase and normalize whitespace for deterministic string comparisons."""
     return " ".join(text.lower().split())
 
 
 def _tokenize(text: str) -> set[str]:
+    """Tokenize normalized text and lightly singularize plural nouns."""
     normalized = set()
     for token in TOKEN_RE.findall(_norm(text)):
         if len(token) > 3 and token.endswith("s"):
@@ -64,6 +71,7 @@ def _tokenize(text: str) -> set[str]:
 
 
 def _score_entry(question: str, q_tokens: set[str], kpi: dict, plan) -> float:
+    """Score one KPI candidate against question text plus planner signals."""
     score = 0.0
     name = _norm(kpi.get("name", ""))
     aliases = [_norm(a) for a in kpi.get("aliases", [])]
@@ -110,10 +118,17 @@ def _score_entry(question: str, q_tokens: set[str], kpi: dict, plan) -> float:
         if q_tokens & entity_tokens:
             score += 0.04
 
+    # Tiered canonical support: prefer tier_1 for planner routing.
+    if kpi.get("tier") == "tier_1":
+        score += 0.03
+    elif kpi.get("tier") == "tier_2":
+        score -= 0.02
+
     return min(score, 0.99)
 
 
 def match_kpi(question: str, plan) -> KpiMatchDecision:
+    """Match question to one canonical KPI using confidence and ambiguity guards."""
     normalized_question = _norm(question)
     q_tokens = _tokenize(normalized_question)
     catalog = load_kpi_catalog()
@@ -134,6 +149,20 @@ def match_kpi(question: str, plan) -> KpiMatchDecision:
             confidence=best_score,
             reason="No KPI match passed confidence threshold.",
         )
+
+    # Guardrail: leaderboard KPIs should only match ranking-style questions.
+    # Otherwise generic trading questions can inherit a narrow default window (e.g., 7d)
+    # and return empty/null outputs on stale local datasets.
+    if best_kpi.get("category") == "leaderboard":
+        has_leaderboard_language = any(
+            term in normalized_question for term in LEADERBOARD_TERMS
+        )
+        if not plan.requires_ranking and not has_leaderboard_language:
+            return KpiMatchDecision(
+                matched=False,
+                confidence=best_score,
+                reason="Leaderboard KPI requires ranking intent; using schema fallback.",
+            )
 
     if (best_score - second_score) < AMBIGUOUS_MARGIN:
         return KpiMatchDecision(

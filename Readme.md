@@ -1,488 +1,186 @@
-# ATHL Analytics Agent — AI-Powered Data Analyst
+# ATHL Analytics Agent
 
-## Overview
+ATHL Analytics Agent is an NL-to-SQL assistant for ATHL data with:
 
-ATHL Analytics Agent is an AI-driven analytics assistant that translates natural language questions into SQL queries and returns actionable insights from structured data.
+- schema-grounded retrieval
+- deterministic planning
+- optional KPI semantic routing
+- safe execution + retry
+- offline routing evals
 
-The system leverages Retrieval-Augmented Generation (RAG) to provide schema-aware, context-rich query generation, enabling users to interact with data without writing SQL.
+## Why This Project Exists
 
-This project demonstrates how modern LLM systems can be combined with data engineering principles to build scalable, intelligent analytics tools.
+Large language models can generate SQL quickly, but raw prompting alone often fails on:
 
----
+- incorrect joins
+- wrong aggregation semantics
+- hallucinated columns/tables
+- poor handling of unavailable business metrics
 
-## Key Features
+This project addresses those failure modes with a layered architecture that keeps SQL generation grounded in actual schema and controlled business semantics.
 
-- Natural language → SQL query generation
-- Semantic schema retrieval using vector embeddings
-- Metric-aware querying (business logic understanding)
-- Self-correction loop for SQL error handling
-- Interactive UI for querying and exploration
-- Query history and debugging visibility
-- Clean modular architecture (RAG-based pipeline)
+## What It Does Today
 
----
+- Converts natural-language questions into SQL
+- Executes validated SQL against PostgreSQL
+- Retries once with context-aware fix logic on execution errors
+- Explains successful query results in natural language
+- Optionally maps clear KPI requests to canonical KPI definitions
+- Returns explicit dependency warnings for blocked KPIs
 
-## Architecture
-User Input
-↓
-Retriever (ChromaDB)
-↓
-Context Builder
-↓
-LLM (SQL Generation)
-↓
-SQL Validator
-↓
-PostgreSQL Execution
-↓
-Results + Explanation
+## Quick Start
 
-ARCHITECTURE
-
-          ┌──────────────┐
-          │  User Query  │
-          └──────┬───────┘
-                 ↓
-        ┌─────────────────────┐
-        │   Embedding Model   │
-        └────────┬────────────┘
-                 ↓
-        ┌─────────────────────┐
-        │   Vector DB (RAG)   │
-        └────────┬────────────┘
-                 ↓
-        ┌─────────────────────┐
-        │ Context Builder     │
-        └────────┬────────────┘
-                 ↓
-        ┌─────────────────────┐
-        │ LLM → SQL           │
-        └────────┬────────────┘
-                 ↓
-        ┌─────────────────────┐
-        │ SQL Validator       │
-        └────────┬────────────┘
-                 ↓
-        ┌─────────────────────┐
-        │ Query Execution     │
-        └────────┬────────────┘
-                 ↓
-        ┌─────────────────────┐
-        │ Self-Correction     │
-        └─────────────────────┘
-
-
----
-
-## System Design Highlights
-
-### 1. Retrieval-Augmented Generation (RAG)
-Instead of passing the entire schema to the LLM, the system:
-- Embeds schema metadata into a vector database
-- Retrieves only relevant tables and metrics per query
-- Improves accuracy and scalability
-
-### 2. Metric-Aware Reasoning
-Metrics are treated as first-class entities:
-- Embedded alongside schema
-- Retrieved contextually
-- Used by LLM to generate correct aggregations
-
-### 3. Self-Correction Loop
-- Detects SQL execution errors
-- Re-prompts LLM with error + schema context
-- Automatically retries with corrected SQL
-
-### 4. Modular Pipeline
-Each component is isolated:
-- Retriever
-- Context Builder
-- SQL Generator
-- Validator
-- Query Runner
-
-This makes the system extensible and production-ready.
-
----
-
-## Tech Stack
-
-- Python
-- OpenAI API (LLM + embeddings)
-- ChromaDB (vector database)
-- PostgreSQL
-- Streamlit (UI)
-
----
-
-## Example Queries
-
-- "total trades"
-- "average trades per user"
-- "total trades by signup date"
-- "trades per athlete"
-- "top users by trading activity"
-
----
-
-## UI Preview
-
-(Add screenshots here)
-
-Suggested screenshots:
-- Query → SQL → Results
-- Retrieved context (debug)
-- Query history sidebar
-
----
-
-## How to Run Locally
-
-### 1. Install dependencies
+### 1) Install dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements_v2.txt
 ```
 
+### 2) Configure environment
 
-### 2. Set environment variables
-
-Create .env file:
-`OPENAI_API_KEY=your_api_key`
-
-### 3. Run the app
-`python -m streamlit run app/ui.py`
-
-Key Challenges Solved
-1. Schema Scalability
-
-Problem:
-Large schemas overwhelm LLM context
-
-Solution:
-Vector search retrieves only relevant tables
-
-2. Incorrect Aggregations
-
-Problem:
-LLMs often mis-handle metrics like averages
-
-Solution:
-Metric definitions embedded and retrieved
-Prompt enforces correct aggregation patterns
-
-3. SQL Failures
-
-Problem:
-Invalid SQL generation
-
-Solution:
-Validation layer + self-correction loop
-
-4. Join Reasoning
-
-Problem:
-
-Multi-table queries are error-prone
-
-Solution:
-Schema-aware prompting + retrieval context
-
-### Future Improvements
-#### Planned (Next Phase)
-* Hybrid SQL Builder (deterministic query generation)
-* Dynamic join resolver using schema relationships
-* Query planning layer (multi-step reasoning)
-* Caching + performance optimization
-#### Product Enhancements
-* Dashboarding layer
-* User authentication
-* Query saving and sharing
-* Real-time data connections
-
-### Deployment
-#### Recommended: Streamlit Cloud
-1. Push to GitHub
-2. Deploy via Streamlit Cloud
-3. Add secret:
-
-`OPENAI_API_KEY=your_key`
-
-### Why This Project Matters
-
-This project demonstrates:
-
-* Applied LLM engineering
-* Data system design (RAG + DB integration)
-* Handling real-world AI limitations (hallucination, errors)
-* Building end-to-end data products
-
-It bridges:
-
-`Data Engineering + AI + Product Thinking`
-
-### Author
-**Ali Khanzadi**
-
-# Conceptual Architecture
-        
-                        ┌──────────────────────────┐
-                        │        User (UI)         │
-                        │    Streamlit (ui.py)     │
-                        └────────────┬─────────────┘
-                                     │ user question
-                                     ↓
-                        ┌──────────────────────────┐
-                        │   Retriever (RAG)        │
-                        │   retriever.py           │
-                        └────────────┬─────────────┘
-                                     │
-                ┌────────────────────┴────────────────────┐
-                │                                         │
-                ↓                                         ↓
-        ┌──────────────────────┐             ┌────────────────────────┐
-        │ schema_docs.json     │             │ vector_store.py        │
-        │ (data source)        │             │ Chroma DB              │
-        └──────────┬───────────┘             └──────────┬─────────────┘
-                   │                                    │
-                   │ load + format                      │ similarity search
-                   ↓                                    ↓
-             ┌────────────────────────────────────────────┐
-             │ embeddings.py                              │
-             │ → text chunks + embeddings                 │
-             └────────────────────────────────────────────┘
-                                     │
-                                     ↓
-                        ┌──────────────────────────┐
-                        │  context_builder.py      │
-                        │  → clean schema context  │
-                        └────────────┬─────────────┘
-                                     │
-                                     ↓
-                        ┌──────────────────────────┐
-                        │   generate_sql.py        │
-                        │   (LLM)                  │
-                        └────────────┬─────────────┘
-                                     │ SQL
-                                     ↓
-                        ┌──────────────────────────┐
-                        │   validator.py           │
-                        │   → safe SQL only        │
-                        └────────────┬─────────────┘
-                                     │
-                                     ↓
-                        ┌──────────────────────────┐
-                        │   query_runner.py        │
-                        │   → Postgres execution   │
-                        └────────────┬─────────────┘
-                                     │ results / error
-                         ┌───────────┴────────────┐
-                         ↓                        ↓
-           ┌──────────────────────────┐   ┌──────────────────────────┐
-           │ explain_results.py       │   │ generate_sql.fix_sql()   │
-           │ → natural language       │   │ → retry on failure       │
-           └────────────┬─────────────┘   └────────────┬─────────────┘
-                        │                              │
-                        └──────────────┬───────────────┘
-                                       ↓
-                        ┌──────────────────────────┐
-                        │ UI (Streamlit)           │
-                        │ → SQL + table + explain  │
-                        └──────────────────────────┘
-        
-Key clarifications
-* schema_docs.json is the semantic layer (tables + metrics)
-* embeddings.py converts schema → vectors
-* vector_store.py persists them in Chroma
-* retriever.py mixes:
-    * deterministic metric matching
-    * vector similarity for tables
-* context_builder.py turns raw docs → clean prompt text
-* generate_sql.py is the core reasoning step (LLM)
-* validator.py enforces read-only SQL safety
-* query_runner.py executes against Postgres                
-
-# Execution Pipeline (Function-Level Flow when main.py runs)
-
-This shows actual function calls and interactions.
-        User Input (Streamlit UI)
-                │
-                ↓
-        retrieve_relevant_docs(question)
-                │
-                ├── load_schema_docs()                [embeddings.py]
-                ├── format_doc()
-                ├── OpenAI embeddings (question)
-                ├── get_collection()                 [vector_store.py]
-                ├── query_collection()
-                └── return relevant docs
-                │
-                ↓
-        build_context(docs)                          [context_builder.py]
-                │
-                └── returns formatted schema text
-                │
-                ↓
-        generate_sql(question)                       [generate_sql.py]
-                │
-                ├── retrieve_relevant_docs()   (called AGAIN internally)
-                ├── build_context()
-                ├── construct prompt
-                ├── OpenAI chat.completions()
-                └── clean_sql()
-                │
-                ↓
-        validate_sql(sql)                            [validator.py]
-                │
-                ├── check starts with SELECT
-                └── block unsafe keywords
-                │
-                ↓
-        enforce_limit(sql)
-                │
-                └── append LIMIT if missing
-                │
-                ↓
-        PostgresClient.run_query(sql)                [query_runner.py]
-                │
-                ├── psycopg2 execute
-                └── return results OR error
-                │
-                ├───────────────┐
-                │               │
-                ↓               ↓
-        SUCCESS           ERROR PATH
-                │               │
-                │         fix_sql(question, sql, error, context)
-                │               │
-                │         ├── OpenAI call
-                │         └── corrected SQL
-                │               │
-                │         run_query() again
-                │
-                ↓
-        explain_results(question, sql, results)      [explain_results.py]
-                │
-                └── OpenAI explanation
-                │
-               ↓
-        Streamlit UI Rendering
-                ├── SQL
-                ├── DataFrame
-                ├── Explanation
-                └── Debug context
-
---------------
-FROM DAY 11
-# ATHL Analytics Agent — AI-Powered Data Analyst
-
-## Overview
-
-ATHL Analytics Agent is an AI-driven analytics assistant that translates natural language questions into SQL queries and returns actionable insights from structured data.
-
-The system leverages Retrieval-Augmented Generation (RAG) to provide schema-aware, context-rich query generation, enabling users to interact with data without writing SQL.
-
-This project demonstrates how modern LLM systems can be combined with data engineering principles to build scalable, intelligent analytics tools.
-
----
-
-## Key Features
-
-- Natural language → SQL query generation
-- Semantic schema retrieval using vector embeddings
-- Metric-aware querying (business logic understanding)
-- Self-correction loop for SQL error handling
-- Interactive UI for querying and exploration
-- Query history and debugging visibility
-- Clean modular architecture (RAG-based pipeline)
-
----
-
-## Architecture
-
-
-User Input
-↓
-Retriever (ChromaDB)
-↓
-Context Builder
-↓
-LLM (SQL Generation)
-↓
-SQL Validator
-↓
-PostgreSQL Execution
-↓
-Results + Explanation
-
-
----
-
-## System Design Highlights
-
-### 1. Retrieval-Augmented Generation (RAG)
-Instead of passing the entire schema to the LLM, the system:
-- Embeds schema metadata into a vector database
-- Retrieves only relevant tables and metrics per query
-- Improves accuracy and scalability
-
-### 2. Metric-Aware Reasoning
-Metrics are treated as first-class entities:
-- Embedded alongside schema
-- Retrieved contextually
-- Used by LLM to generate correct aggregations
-
-### 3. Self-Correction Loop
-- Detects SQL execution errors
-- Re-prompts LLM with error + schema context
-- Automatically retries with corrected SQL
-
-### 4. Modular Pipeline
-Each component is isolated:
-- Retriever
-- Context Builder
-- SQL Generator
-- Validator
-- Query Runner
-
-This makes the system extensible and production-ready.
-
----
-
-## Tech Stack
-
-- Python
-- OpenAI API (LLM + embeddings)
-- ChromaDB (vector database)
-- PostgreSQL
-- Streamlit (UI)
-
----
-
-## Example Queries
-
-- "total trades"
-- "average trades per user"
-- "total trades by signup date"
-- "trades per athlete"
-- "top users by trading activity"
-
----
-
-## UI Preview
-
-(Add screenshots here)
-
-Suggested screenshots:
-- Query → SQL → Results
-- Retrieved context (debug)
-- Query history sidebar
-
----
-
-## How to Run Locally
-
-### 1. Install dependencies
+Create `.env`:
 
 ```bash
-pip install -r requirements.txt        
+OPENAI_API_KEY=your_key
+DB_ENV=local
+```
+
+### 3) Run the app
+
+```bash
+streamlit run app/ui.py
+```
+
+Optional CLI mode:
+
+```bash
+python -m app.main
+```
+
+## Runtime Flow (Current)
+
+```text
+User question
+  -> run_ingest()                                [app/rag/ingest.py]
+  -> get_retrieval_context(question)             [app/rag/context_service.py]
+       -> retrieve_relevant_docs()               [app/rag/retriever.py]
+       -> build_context()
+  -> generate_sql(question, context)             [app/llm/generate_sql.py]
+       -> plan_query()                           [app/llm/planner.py]
+       -> match_kpi()                            [app/llm/kpi_matcher.py]
+       -> resolve_metric()                       [app/llm/metric_resolver.py]
+       -> compose_sql_user_prompt()              [app/llm/prompts.py]
+  -> validate_sql() + enforce_limit()            [app/db/validator.py]
+  -> run_query()                                 [app/db/query_runner.py]
+     -> explain_results()                        [app/llm/explain_results.py]
+     -> or fix_sql(question, sql, error, context)
+```
+
+## Architecture Layers
+
+### 1) RAG Retrieval Layer
+
+- `app/rag/embeddings.py`: schema doc loading/normalization + embedding generation
+- `app/rag/vector_store.py`: Chroma collection/client/query management
+- `app/rag/retriever.py`: active retrieval strategy (metric-first + vector table retrieval)
+- `app/rag/context_service.py`: single retrieval pass and shared context text
+- `app/rag/ingest.py`: schema hash checks + conditional re-embedding
+
+### 2) LLM Orchestration Layer
+
+- `app/llm/planner.py`: deterministic intent/time-grain/entity hints
+- `app/llm/kpi_matcher.py`: confidence-gated canonical KPI routing
+- `app/llm/metric_resolver.py`: metric phrase disambiguation
+- `app/llm/prompts.py`: standardized prompt assembly
+- `app/llm/generate_sql.py`: main generate + fix orchestration
+- `app/llm/explain_results.py`: result narration
+
+### 3) Execution/Safety Layer
+
+- `app/db/validator.py`: SELECT-only safety checks + limit enforcement
+- `app/db/query_runner.py`: DB execution
+- `app/cache.py`: SQL/result caching
+- `app/logger.py`: query logging
+
+## KPI Semantic Layer
+
+Catalog source:
+
+- `app/rag/catalog/kpi_catalog.json`
+
+Catalog validation:
+
+- `app/rag/catalog/kpi_catalog.py`
+
+Routing outcomes:
+
+- **No confident match:** schema-only generation
+- **Matched + active KPI:** inject canonical KPI context block into prompt
+- **Matched + blocked KPI:** return safe dependency message SQL (no fabricated data paths)
+
+Design rule:
+
+- KPI routing is optional and should never block broad schema-grounded analytics coverage.
+
+## Evaluation & Testing
+
+### Offline routing eval
+
+Run:
+
+```bash
+python app/eval/run_planner_kpi_eval.py
+```
+
+Cases:
+
+- `app/eval/planner_kpi_cases.json`
+
+Coverage includes:
+
+- active KPI matches
+- blocked KPI behavior
+- schema fallback behavior
+- planner intent/time-grain expectations
+
+### Manual retrieval checks
+
+Use:
+
+- `docs/retrieval_test_checklist.md`
+
+This checklist validates table/metric retrieval quality and routing behavior before changing retriever logic.
+
+## Repository Map (Core)
+
+- `app/main.py` CLI entrypoint
+- `app/ui.py` Streamlit entrypoint
+- `app/llm/` generation, planning, KPI/metric routing, prompt composition
+- `app/rag/` retrieval, embeddings, vector store, ingestion
+- `app/rag/catalog/` KPI catalog + schema docs assets
+- `app/eval/` offline planner/KPI routing eval harness
+- `docs/` architecture, KPI, schema, and call-graph documentation
+- `data/v2/` synthetic/source datasets + DDL assets
+
+## Known Constraints
+
+- Depends on OpenAI APIs for embeddings + SQL/explanation generation.
+- Retrieval quality still depends on schema doc quality and catalog curation.
+- `app/rag/retriever_experimental.py` is intentionally not runtime-wired.
+- `query.log` is runtime output and should be treated as an artifact.
+
+## Suggested Next Improvements
+
+- Expand offline eval set to include SQL shape assertions per intent class
+- Add deterministic join-path checks for high-risk multi-table questions
+- Add retrieval A/B mode switch (baseline vs reranked retriever) after eval coverage grows
+- Add CI job to run planner/KPI eval on every PR
+
+## Reference Docs
+
+- `docs/kpi_catalog_spec.md`
+- `docs/kpi_processing_flow.md`
+- `docs/database_schema_taxonomy.md`
+- `docs/function_call_graph_rag.md`
+- `docs/module_call_graph.md`
+

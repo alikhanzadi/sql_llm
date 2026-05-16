@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 
 from .kpi_matcher import match_kpi
+from .metric_resolver import resolve_metric
 from .planner import plan_query
 from .prompts import SYSTEM_PROMPT, compose_fix_user_prompt, compose_sql_user_prompt
 
@@ -42,6 +43,7 @@ def generate_sql(user_query: str, context: str) -> str:
     # Step 1: Build deterministic intent plan and prompt.
     plan = plan_query(user_query)
     kpi_decision = match_kpi(user_query, plan)
+    metric_resolution = resolve_metric(user_query)
     print(
         "[KPI-MATCH]",
         {
@@ -49,6 +51,15 @@ def generate_sql(user_query: str, context: str) -> str:
             "status": kpi_decision.status,
             "confidence": round(kpi_decision.confidence, 3),
             "reason": kpi_decision.reason,
+        },
+    )
+    print(
+        "[METRIC-RESOLVER]",
+        {
+            "matched": metric_resolution.matched,
+            "metric_name": metric_resolution.metric_name,
+            "sql_expression": metric_resolution.sql_expression,
+            "reason": metric_resolution.reason,
         },
     )
 
@@ -65,6 +76,7 @@ def generate_sql(user_query: str, context: str) -> str:
         context=context,
         plan_block=plan.to_prompt_block(),
         kpi_block=kpi_decision.to_prompt_block(),
+        metric_block=metric_resolution.to_prompt_block(),
     )
 
     # Step 2: Call LLM
@@ -91,6 +103,7 @@ def generate_sql(user_query: str, context: str) -> str:
 def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
     plan = plan_query(user_query)
     kpi_decision = match_kpi(user_query, plan)
+    metric_resolution = resolve_metric(user_query)
     print(
         "[KPI-MATCH-FIX]",
         {
@@ -100,6 +113,15 @@ def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
             "reason": kpi_decision.reason,
         },
     )
+    print(
+        "[METRIC-RESOLVER-FIX]",
+        {
+            "matched": metric_resolution.matched,
+            "metric_name": metric_resolution.metric_name,
+            "sql_expression": metric_resolution.sql_expression,
+            "reason": metric_resolution.reason,
+        },
+    )
     prompt = compose_fix_user_prompt(
         user_query=user_query,
         sql=sql,
@@ -107,6 +129,7 @@ def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
         context=context,
         plan_block=plan.to_prompt_block(),
         kpi_block=kpi_decision.to_prompt_block(),
+        metric_block=metric_resolution.to_prompt_block(),
     )
 
     client = _get_client()

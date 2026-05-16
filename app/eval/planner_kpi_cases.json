@@ -1,0 +1,68 @@
+{
+  "purpose": "Regression suite for planner + KPI matcher behavior. This does not define KPIs; it verifies routing behavior for representative user questions.",
+  "why_this_exists": [
+    "Protect against silent behavior drift when planner.py or kpi_matcher.py changes.",
+    "Confirm active KPI questions map to canonical KPI IDs.",
+    "Confirm blocked KPIs are recognized as blocked_by_missing_data guardrails.",
+    "Confirm generic analytics questions fall back to schema-grounded path (no KPI mapping)."
+  ],
+  "how_to_use": [
+    "Run: python app/eval/run_planner_kpi_eval.py",
+    "Extend by adding cases under 'cases' with expected intent/time grain/KPI mapping."
+  ],
+  "cases": [
+    {
+      "id": "active_verification_pass_rate",
+      "question": "What is ID verification pass rate by provider this month?",
+      "expected_intent": "avg_per_entity",
+      "expected_time_grain": "month",
+      "expected_kpi_id": "id_verification_pass_rate",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "active_waitlist_approval",
+      "question": "What is waitlist approval rate by issuer type?",
+      "expected_intent": "avg_per_entity",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": "waitlist_approval_rate",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "active_top_tokens_7d",
+      "question": "Top tokens traded in the last 7 days",
+      "expected_intent": "top_k",
+      "expected_time_grain": "week",
+      "expected_kpi_id": "token_leaderboard_most_traded",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "blocked_login_attempts",
+      "question": "Show login attempts by day",
+      "expected_intent": "trend",
+      "expected_time_grain": "day",
+      "expected_kpi_id": "login_attempt_volume",
+      "expected_kpi_status": "blocked_by_missing_data"
+    },
+    {
+      "id": "schema_fallback_basic_count",
+      "question": "How many users signed up this week?",
+      "expected_intent": "count",
+      "expected_time_grain": "week",
+      "expected_kpi_id": null
+    },
+    {
+      "id": "schema_fallback_join_lookup",
+      "question": "List issuers with their country and level",
+      "expected_intent": "join_lookup",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": null
+    },
+    {
+      "id": "schema_fallback_avg_vs_median_traded_per_day",
+      "question": "How many tokens have been traded on average per day and how does it compare with the median traded per day?",
+      "expected_intent": "avg_per_entity",
+      "expected_time_grain": "day",
+      "expected_kpi_id": null
+    }
+  ]
+}
