@@ -1,37 +1,50 @@
-# Module Call Graph
+# Module Call Graph (v2)
 
-This high-level diagram shows which modules call into other modules.
+This high-level diagram shows runtime module dependencies in a layered vertical layout.
 
 ```mermaid
-flowchart LR
-  M0["app.main"] --> M1["app.cache"]
-  M0 --> M2["app.db.query_runner"]
-  M0 --> M3["app.db.validator"]
-  M0 --> M9["app.db.schema"]
-  M0 --> M4["app.llm.generate_sql"]
-  M0 --> M5["app.llm.explain_results"]
-  M0 --> M6["app.logger"]
-  M0 --> M7["app.rag.context_service"]
-  M0 --> M8["app.rag.ingest"]
+flowchart TB
+  E0["Entry Layer (app.ui)"] --> O0["Orchestration Layer"]
+  O0 --> R0["RAG Layer"]
+  O0 --> L0["LLM Layer"]
+  O0 --> D0["DB Layer"]
+  O0 --> X0["Support Layer"]
 
-  M2 --> M9
+  E0 --> U0["app.ui"]
+  U0 --> O0
 
-  M7 --> M11["app.rag.retriever"]
-  M8 --> M12["app.rag.embeddings"]
-  M8 --> M13["app.rag.vector_store"]
-  M8 --> M9
+  O0 --> RI["app.rag.ingest"]
+  O0 --> RC["app.rag.context_service"]
+  O0 --> LG["app.llm.generate_sql"]
+  O0 --> LE["app.llm.explain_results"]
+  O0 --> DV["app.db.validator"]
+  O0 --> DQ["app.db.query_runner"]
+  O0 --> CA["app.cache"]
+  O0 --> LO["app.logger"]
 
-  M11 --> M12
-  M11 --> M13
+  RC --> RR["app.rag.retriever"]
+  RI --> RE["app.rag.embeddings"]
+  RI --> RV["app.rag.vector_store"]
 
-  M14["app.rag.retriever_experimental"] --> M12
-  M14 --> M13
+  RR --> RE
+  RR --> RV
 
-  M12 --> M9
-  M13 --> M9
+  LG --> LP["app.llm.planner"]
+  LG --> LK["app.llm.kpi_matcher"]
+  LG --> LM["app.llm.metric_resolver"]
+  LG --> LPR["app.llm.prompts"]
+
+  LK --> KC["app.rag.catalog.kpi_catalog"]
+
+  RE --> DS["app.db.schema"]
+  RV --> DS
+  RI --> DS
+  DQ --> DS
 ```
 
 ## Notes
 
-- Scope: module-to-module calls discovered from `app/**/*.py`.
-- This is intended for architecture-level discussion and presentations.
+- Scope: runtime-oriented module dependencies from `app/**/*.py`.
+- Entry layer in this v2 runtime view is the Streamlit app (`app.ui`).
+- Arrow meaning: left module calls/imports and depends on right module.
+- `app.rag.retriever_experimental` is intentionally excluded from runtime v2 graph.

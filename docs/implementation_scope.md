@@ -49,7 +49,7 @@ Build a reliable NL-to-SQL layer with broad schema coverage by grounding SQL gen
 
 ### Priority 2: onboarding and verification analytics
 - Funnel progression and conversion metrics:
-  - signup start/completion, waitlist progression, issuer activation.
+  - signup start/completion (waitlist progression removed; waitlist dataset is no longer in active schema).
 - Verification metrics:
   - social verification success/retry/failure reasons,
   - identity verification opt-in/pass/completion/manual review.
@@ -70,7 +70,6 @@ Build a reliable NL-to-SQL layer with broad schema coverage by grounding SQL gen
 ### Tier A candidates (tables exist; good for canonical KPI definitions now)
 - Identity verification: opt-in, pass/completion, manual review, alias confidence.
 - Social verification: completion/success by platform, retry counts, failure reasons.
-- Onboarding/waitlist: signups over time, approval rate, activation rate, waitlist conversion.
 - Issuer segmentation: issuer type distribution, profile completion by type/sport/category.
 - Finance/trading basics: amount raised vs target, percent supply sold, daily revenue trends.
 
