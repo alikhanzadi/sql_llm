@@ -3,6 +3,7 @@ venv/
 /- for me/
 .streamlit/
 chroma_db/
+.claude
 
 # macOS metadata
 .DS_Store
