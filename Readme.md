@@ -33,7 +33,7 @@ This project addresses those failure modes with a layered architecture that keep
 ### 1) Install dependencies
 
 ```bash
-pip install -r requirements_v2.txt
+pip install -r requirements_intel.txt
 ```
 
 ### 2) Configure environment

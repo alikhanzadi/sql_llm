@@ -1,4 +1,4 @@
-venv/
+codex-venv
 .env
 /- for me/
 .streamlit/

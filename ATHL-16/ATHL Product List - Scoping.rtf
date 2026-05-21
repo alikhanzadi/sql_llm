@@ -1,0 +1,133 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 LucidaGrande;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 ATHL Feature Scope Decisions\
+\
+## Pending (118)\
+  - [Core platform concept] Fan token platform for athletes & creators\
+  - [Core platform concept] Two issuer types: Athlete and Creator\
+  - [Core platform concept] Fans can also be issuers (all issuers get fan access)\
+  - [Core platform concept] Step-up bonding curve pricing \'97 first token at $1\
+  - [Core platform concept] Fundraising goal $100K\'96$10M, set by issuer\
+  - [Core platform concept] Purchase-only period before open trading begins\
+  - [Currency & wallet] A-Bucks internal currency (1:1 with USD)\
+  - [Currency & wallet] Fund via credit/debit card (Stripe, 2.9% + $0.30)\
+  - [Currency & wallet] Fund via ACH bank transfer\
+  - [Currency & wallet] Fund via direct crypto transfer (no ATHL fee)\
+  - [Currency & wallet] Alchemy wallet for all users\
+  - [Currency & wallet] Privy wallet (separate from Alchemy?)\
+  - [Currency & wallet] SOL as a payment option\
+  - [Currency & wallet] ATHL Coin to replace A-Bucks (post exchange listing)\
+  - [Issuer economics & payouts] Issuer receives 80% of initial sale proceeds\
+  - [Issuer economics & payouts] Rolling 12-month payout schedule\
+  - [Issuer economics & payouts] 1% royalty to issuer on all secondary trades, for life\
+  - [Issuer economics & payouts] 1% trading fee on all token purchases\
+  - [Issuer economics & payouts] Issuer goal = net; total raised is 25% higher (gross)\
+  - [User onboarding & identity] Fan signup \'97 email/password, social login, passkey\
+  - [User onboarding & identity] Issuer signup \'97 athlete path\
+  - [User onboarding & identity] Issuer signup \'97 creator path\
+  - [User onboarding & identity] Social media auth required (min 2 accounts for issuers)\
+  - [User onboarding & identity] Issuer waiting list + phased manual approval\
+  - [User onboarding & identity] Identity verification via Socure (high-profile issuers)\
+  - [User onboarding & identity] Challenge-based verification (code posted to social profile)\
+  - [User onboarding & identity] Manual ATHL team review of all issuer applications\
+  - [User onboarding & identity] MFA mandatory for issuers (TOTP authenticator app)\
+  - [User onboarding & identity] Follower authenticity check via HypeAuditor (>10K followers)\
+  - [Fan dashboard] Portfolio value line chart (combined wallet total)\
+  - [Fan dashboard] Wallet detail (balances, A-Bucks, tokens held)\
+  - [Fan dashboard] Watch list (up to 50 issuers, persists across sessions)\
+  - [Fan dashboard] Transaction history (all buy/sell orders)\
+  - [Fan dashboard] Leaderboards (highest price, most sales, most raised)\
+  - [Fan dashboard] Suggested issuer tokens section\
+  - [Fan dashboard] Search and filter (sport, position, school, team, followers)\
+  - [Fan dashboard] Referral dashboard section\
+  - [Issuer purchase page] Token price line chart (1d, 1w, 1m, all-time)\
+  - [Issuer purchase page] Live token sale state (total raised, tokens sold, price)\
+  - [Issuer purchase page] Issuer profile (name, verified socials, bio, perks, media)\
+  - [Issuer purchase page] ID verification badge on profile\
+  - [Issuer purchase page] Token purchase window (by # tokens or USD amount)\
+  - [Issuer purchase page] Per-issuer purchase history for the logged-in user\
+  - [Issuer admin dashboard] Token stats overview (price, sold, available, status)\
+  - [Issuer admin dashboard] Revenue summary (gross, ATHL fee, net)\
+  - [Issuer admin dashboard] Market cap history chart\
+  - [Issuer admin dashboard] Proceeds projection table (next 12 months)\
+  - [Issuer admin dashboard] Full transaction history log\
+  - [Issuer admin dashboard] Token holder table with CSV download\
+  - [Issuer admin dashboard] Editable issuer profile (social handles read-only)\
+  - [Issuer admin dashboard] Login activity view (timestamps, IPs, devices)\
+  - [Referral program] Unique referral link per user\
+  - [Referral program] Issuer referral: 2% of referred issuer's initial sales, max $1,000\
+  - [Referral program] Fan referral: 0.5% of referred fan's purchases, max $20\
+  - [Referral program] Rewards paid in A-Bucks (convertible to USDC)\
+  - [Referral program] Referral click source tracking (which social platform)\
+  - [Market safety & anti-manipulation] Circuit breaker: >10% price drop in 24h 
+\f1 \uc0\u8594 
+\f0  pause trading\
+  - [Market safety & anti-manipulation] Issuer purchase limit: max 0.1% of own tokens\
+  - [Market safety & anti-manipulation] Issuer must give 3-day advance notice before selling\
+  - [Market safety & anti-manipulation] Issuer sells as limit orders (at/above last trade price)\
+  - [Market safety & anti-manipulation] User sell limit: max 5,000 tokens per 24h (admin-adjustable)\
+  - [Market safety & anti-manipulation] Price floor: no sales below 85% of prior day's average\
+  - [Market safety & anti-manipulation] Per-user purchase cap per issuer token (anti-hoarding)\
+  - [Market safety & anti-manipulation] Fraud reversal: 24\'9648h review before blockchain finalization\
+  - [Market safety & anti-manipulation] Retail purchase priority in lower price tranches\
+  - [Market safety & anti-manipulation] Liquidity incentives (reduced fees for active traders)\
+  - [Security & fraud detection] CAPTCHA on purchase confirmation\
+  - [Security & fraud detection] Randomized purchase execution delays (50\'96100ms)\
+  - [Security & fraud detection] User risk score (0\'96100 ML model)\
+  - [Security & fraud detection] Dynamic KYC triggers (score >70 
+\f1 \uc0\u8594 
+\f0  ID check via Persona)\
+  - [Security & fraud detection] Behavioral biometrics for bot detection (FingerprintJS)\
+  - [Security & fraud detection] Grok-based X monitoring (real-time scam/pump signals)\
+  - [Security & fraud detection] Non-X social monitoring (Telegram, Discord, Reddit NLP)\
+  - [Security & fraud detection] Trading pattern manipulation alerts to staff\
+  - [Security & fraud detection] Email verification (reject disposable domains, OTP)\
+  - [Security & fraud detection] Multi-sig wallets, security audits, real-time monitoring\
+  - [ATHLScan \'97 public ledger] Public transaction ledger (reads from primary DB)\
+  - [ATHLScan \'97 public ledger] Anonymous user codes (5\'9630 per user, random per trade)\
+  - [ATHLScan \'97 public ledger] Issuer publicity toggle (opt-in to show real username)\
+  - [ATHLScan \'97 public ledger] Admin reversal with logged reason + user notification\
+  - [ATHLScan \'97 public ledger] Cryptographic log signing (HMAC-SHA256) + daily audit\
+  - [ATHLScan \'97 public ledger] Anti-scraping: rate limiting + 5-min timestamp rounding\
+  - [Pay-It-Forward program] Reinvest proceeds into other issuers' tokens to unlock funds early\
+  - [Pay-It-Forward program] Peer-to-peer endorsement mechanic\
+  - [Fantasy teams] Teams feature \'97 issuers form remote/local athletic teams\
+  - [Fantasy teams] Team token creation ($2M\'96$10M fundraising range)\
+  - [Fantasy teams] Token staking for integrity (5,000 tokens/leader in escrow)\
+  - [Fantasy teams] Challenge system (72h window, X callout + email)\
+  - [Fantasy teams] Self-reported results validated by staking system\
+  - [Fantasy teams] Team token page with competition calendar + history\
+  - [Fantasy betting / competitions] Team competitions on fan dashboard (Polymarket-style)\
+  - [Fantasy betting / competitions] Order book betting on competition outcomes\
+  - [Fantasy betting / competitions] Dynamic probability updates from order book activity\
+  - [Fantasy betting / competitions] Bet settlement + payout (0.5% fee on winnings)\
+  - [Fantasy betting / competitions] Team win leaderboard\
+  - [Support & compliance] AI chatbot (24/7, handles common questions)\
+  - [Support & compliance] Email support (support@athl.live, <24h response)\
+  - [Support & compliance] Support request page (form, ticket ID, attachments)\
+  - [Support & compliance] GDPR compliance (explicit consent, data minimization)\
+  - [Support & compliance] CCPA compliance\
+  - [Support & compliance] 7-year log retention for regulatory audits\
+  - [Admin & internal tools] Admin page for issuer waiting list (approve/deny, CSV)\
+  - [Admin & internal tools] Moderator dashboard (social flags, risk alerts, trade alerts)\
+  - [Admin & internal tools] Toggle for Fantasy Team Captain eligibility criteria\
+  - [Admin & internal tools] Role-based access control (RBAC) across all systems\
+  - [Future / planned features] Integrated mass email tool for issuers to message token holders\
+  - [Future / planned features] ATHL Coin replacing A-Bucks after exchange listing\
+  - [Future / planned features] Fan betting on events using ATHL Coin\
+  - [Future / planned features] Advanced referral analytics (funnel metrics, fraud detection)\
+  - [Future / planned features] PBTA \'97 persona-based targeting advertising\
+  - [Future / planned features] AI trading agent (real-time alerts, predictive analytics)\
+  - [Analytics & BI dashboards] Executive overview (KPIs, funnel, MRR from fees, top tokens)\
+  - [Analytics & BI dashboards] Onboarding & verification (step-drop chart, failure heatmap)\
+  - [Analytics & BI dashboards] Trading activity (real-time ticker, candlesticks, whale watch)\
+  - [Analytics & BI dashboards] Referral & rewards (trends, LTV of referred users)\
+  - [Analytics & BI dashboards] Issuer performance (% of target raise, price, leaderboard)\
+  - [Analytics & BI dashboards] Security & risk (event timeline, score distribution, pauses)\
+  - [Analytics & BI dashboards] Support ops (ticket backlog, SLA gauge, word cloud)\
+}
