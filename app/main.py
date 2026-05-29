@@ -18,8 +18,7 @@ from app.llm.generate_sql import fix_sql
 # from app.rag.vector_store import get_collection, store_embeddings, query_collection
 
 from app.rag.ingest import run_ingest
-from app.rag.retriever import retrieve_relevant_docs
-from app.rag.context_builder import build_context
+from app.rag.context_service import get_retrieval_context
 
 from app.cache import (
     get_cached_sql,
@@ -35,21 +34,21 @@ def main():
 
     run_ingest()
 
-    # ADDED (Day 16 — retrieve context ONCE and reuse)
-    docs = retrieve_relevant_docs(user_input)
-    context = build_context(docs)
+    # Retrieve context once and reuse across generate/fix/debug.
+    retrieval_ctx = get_retrieval_context(user_input)
+    context = retrieval_ctx.text
 
     cache_key = user_input.strip().lower()
     sql = get_cached_sql(cache_key)
 
     if not sql:
-        sql = generate_sql(user_input)
+        sql = generate_sql(user_input, context)
         set_cached_sql(cache_key, sql)
+        sql_source = "generated"
     else:
-        print("\nUsing cached SQL\n")
-        print("\nGenerated SQL:\n", sql)
+        sql_source = "cached"
 
-    print("\nDEBUG SQL:\n", sql)
+    print(f"\nSQL ({sql_source}):\n", sql)
 
     if validate_sql(sql):
         sql = enforce_limit(sql)

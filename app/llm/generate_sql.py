@@ -1,14 +1,18 @@
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
 
-from .prompts import SYSTEM_PROMPT
+from .kpi_matcher import match_kpi
+from .metric_resolver import resolve_metric
+from .planner import plan_query
+from .prompts import SYSTEM_PROMPT, compose_fix_user_prompt, compose_sql_user_prompt
 
-from app.rag.retriever import retrieve_relevant_docs
-from app.rag.context_builder import build_context
+try:
+    from openai import OpenAI
+except ModuleNotFoundError:  # pragma: no cover - env dependent
+    OpenAI = None
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+_client = None
 
 SYNONYMS = {
     "users": ["customers", "clients"],
@@ -23,22 +27,60 @@ def clean_sql(response_text: str) -> str:
         .strip()
     )
 
-def generate_sql(user_query: str) -> str:
-    # Step 1: Retrieve relevant schema docs
-    docs = retrieve_relevant_docs(user_query)
 
-    # Step 2: Build clean context
-    context = build_context(docs)
+def _get_client():
+    global _client
+    if _client is not None:
+        return _client
+    if OpenAI is None:
+        raise ModuleNotFoundError(
+            "openai package is not installed. Install dependencies to run SQL generation."
+        )
+    _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _client
 
-    # Step 3: Construct prompt
-    prompt = f"""
-    {context}
+def generate_sql(user_query: str, context: str) -> str:
+    # Step 1: Build deterministic intent plan and prompt.
+    plan = plan_query(user_query)
+    kpi_decision = match_kpi(user_query, plan)
+    metric_resolution = resolve_metric(user_query)
+    print(
+        "[KPI-MATCH]",
+        {
+            "matched_kpi_id": kpi_decision.kpi_id,
+            "status": kpi_decision.status,
+            "confidence": round(kpi_decision.confidence, 3),
+            "reason": kpi_decision.reason,
+        },
+    )
+    print(
+        "[METRIC-RESOLVER]",
+        {
+            "matched": metric_resolution.matched,
+            "metric_name": metric_resolution.metric_name,
+            "sql_expression": metric_resolution.sql_expression,
+            "reason": metric_resolution.reason,
+        },
+    )
 
-    User Question:
-    {user_query}
-    """
+    if kpi_decision.matched and kpi_decision.status == "blocked_by_missing_data":
+        # Keep SQL-only contract while clearly surfacing unavailable KPI dependencies.
+        blocked_text = kpi_decision.blocked_message().replace("'", "''")
+        return (
+            "SELECT "
+            f"'{blocked_text}' AS blocked_kpi_message;"
+        )
 
-    # Step 4: Call LLM
+    prompt = compose_sql_user_prompt(
+        user_query=user_query,
+        context=context,
+        plan_block=plan.to_prompt_block(),
+        kpi_block=kpi_decision.to_prompt_block(),
+        metric_block=metric_resolution.to_prompt_block(),
+    )
+
+    # Step 2: Call LLM
+    client = _get_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -59,25 +101,38 @@ def generate_sql(user_query: str) -> str:
 
 # def fix_sql(user_query: str, sql: str, error: str) -> str:
 def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
-    prompt = f"""
-The following SQL query failed.
+    plan = plan_query(user_query)
+    kpi_decision = match_kpi(user_query, plan)
+    metric_resolution = resolve_metric(user_query)
+    print(
+        "[KPI-MATCH-FIX]",
+        {
+            "matched_kpi_id": kpi_decision.kpi_id,
+            "status": kpi_decision.status,
+            "confidence": round(kpi_decision.confidence, 3),
+            "reason": kpi_decision.reason,
+        },
+    )
+    print(
+        "[METRIC-RESOLVER-FIX]",
+        {
+            "matched": metric_resolution.matched,
+            "metric_name": metric_resolution.metric_name,
+            "sql_expression": metric_resolution.sql_expression,
+            "reason": metric_resolution.reason,
+        },
+    )
+    prompt = compose_fix_user_prompt(
+        user_query=user_query,
+        sql=sql,
+        error=error,
+        context=context,
+        plan_block=plan.to_prompt_block(),
+        kpi_block=kpi_decision.to_prompt_block(),
+        metric_block=metric_resolution.to_prompt_block(),
+    )
 
-Relevant Database Schema:
-{context}
-
-User Question:
-{user_query}
-
-SQL:
-{sql}
-
-Error:
-{error}
-
-Fix the SQL query.
-Return ONLY corrected SQL.
-"""
-
+    client = _get_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
