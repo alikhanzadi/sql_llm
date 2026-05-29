@@ -64,7 +64,7 @@ Phase 1 MVP KPIs from that document:
 The project currently uses static dummy CSV data in:
 
 ```text
-data/v2/tables/
+data/tables/
 ```
 
 Important tables:
@@ -84,9 +84,9 @@ Important tables:
 
 Reference schema files:
 
-- `data/v2/sql_create_tables/athl_raw_tables_postgres.sql`
-- `data/v2/neondb/generate_and_load_data_neon.py`
-- `data/v2/neondb/generate_and_load_data_neon.ipynb`
+- `data/sql_create_tables/athl_raw_tables_postgres.sql`
+- `data/neondb/generate_and_load_data_neon.py`
+- `data/neondb/generate_and_load_data_neon.ipynb`
 
 Important limitation: the current dashboard is intentionally built from static CSVs, not live production data.
 
@@ -191,8 +191,8 @@ Known caveats:
 Commands run:
 
 ```bash
-codex-venv/bin/python -m py_compile app/ui.py
-codex-venv/bin/streamlit run app/ui.py --server.port 8501 --server.headless true
+codex14-venv/bin/python -m py_compile app/ui.py
+codex14-venv/bin/streamlit run app/ui.py --server.port 8501 --server.headless true
 ```
 
 The Streamlit server required sandbox escalation for local port binding in Codex Desktop.
@@ -211,7 +211,7 @@ Browser QA performed:
 From the project root:
 
 ```bash
-codex-venv/bin/streamlit run app/ui.py --server.port 8501 --server.headless true
+codex14-venv/bin/streamlit run app/ui.py --server.port 8501 --server.headless true
 ```
 
 Then open:
@@ -223,9 +223,9 @@ http://localhost:8501
 If the venv is not present on the new computer, install dependencies first:
 
 ```bash
-python3 -m venv codex-venv
-codex-venv/bin/pip install -r requirements.txt
-codex-venv/bin/streamlit run app/ui.py --server.port 8501 --server.headless true
+python3 -m venv codex14-venv
+codex14-venv/bin/pip install -r requirements.txt
+codex14-venv/bin/streamlit run app/ui.py --server.port 8501 --server.headless true
 ```
 
 ## Suggested Next Steps
@@ -259,10 +259,9 @@ You are resuming the ATHL North Star Executive Dashboard project.
 
 Read docs/executive_dashboard_handoff.md first. Then inspect app/ui.py, especially _executive_dashboard_data() and render_executive_dashboard().
 
-Do not replace the dashboard with a generic landing page. Keep it CEO-level, minimal, visually clean, and grounded in the static CSV data under data/v2/tables/.
+Do not replace the dashboard with a generic landing page. Keep it CEO-level, minimal, visually clean, and grounded in the static CSV data under data/tables/.
 
 The primary source KPI list is section 6 of ATHL-16/Athl North Star Executive Dashboard Kpis.pdf. The current implementation already maps the Phase 1 MVP KPIs to available data.
 
 Your next job is to refine and harden the dashboard without inventing unsupported metrics. Preserve the existing documentation, schema explorer, lineage, metric catalog, and Ask the Data pages.
 ```
-

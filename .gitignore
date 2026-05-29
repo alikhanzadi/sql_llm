@@ -1,6 +1,6 @@
 codex-venv
+codex14-venv
 .env
-/- for me/
 .streamlit/
 chroma_db/
 .claude

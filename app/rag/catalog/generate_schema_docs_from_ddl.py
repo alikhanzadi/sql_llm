@@ -260,7 +260,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate detailed schema docs from SQL DDL.")
     parser.add_argument(
         "--ddl",
-        default="data/v2/sql_create_tables/athl_raw_tables_postgres.sql",
+        default="data/sql_create_tables/athl_raw_tables_postgres.sql",
         help="Path to source DDL SQL file.",
     )
     parser.add_argument(

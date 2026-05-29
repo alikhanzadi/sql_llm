@@ -45,7 +45,7 @@ Runtime schema source:
 
 Local CSV source:
 
-- `data/v2/tables/`
+- `data/tables/`
 
 Current documented schema:
 
@@ -175,4 +175,3 @@ Users should review generated SQL before using outputs for reporting.
 4. Open `Metric Definitions` to confirm formulas and KPI status.
 5. Use `Ask the Data` for exploration after secrets are configured.
 6. Promote trusted SQL into a governed dashboard or notebook when a question becomes recurring.
-

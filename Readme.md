@@ -160,7 +160,7 @@ This checklist validates table/metric retrieval quality and routing behavior bef
 - `app/rag/catalog/` KPI catalog + schema docs assets
 - `app/eval/` offline planner/KPI routing eval harness
 - `docs/` architecture, KPI, schema, and call-graph documentation
-- `data/v2/` synthetic/source datasets + DDL assets
+- `data/` synthetic/source datasets + DDL assets
 
 ## Known Constraints
 
@@ -183,4 +183,3 @@ This checklist validates table/metric retrieval quality and routing behavior bef
 - `docs/database_schema_taxonomy.md`
 - `docs/function_call_graph_rag.md`
 - `docs/module_call_graph.md`
-
