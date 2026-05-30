@@ -4,6 +4,7 @@ venv/
 .streamlit/
 chroma_db/
 .claude
+.cursor
 
 # macOS metadata
 .DS_Store
@@ -15,3 +16,4 @@ __pycache__/
 *.py[cod]
 *.pyc
 *.log
+codex-history-sync-*.tar.gz
