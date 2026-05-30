@@ -1,4 +1,9 @@
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    # Keep runtime working in environments where python-dotenv isn't installed.
+    def load_dotenv():
+        return None
 import os
 load_dotenv()
 
