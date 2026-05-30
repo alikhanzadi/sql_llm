@@ -176,11 +176,22 @@ This checklist validates table/metric retrieval quality and routing behavior bef
 - Add retrieval A/B mode switch (baseline vs reranked retriever) after eval coverage grows
 - Add CI job to run planner/KPI eval on every PR
 
+## Codex History Sync Utility
+
+This repo also includes a small local utility for syncing Codex Desktop conversation history between computers without copying credentials or machine-local state.
+
+```bash
+python -m app.codex_history_sync status
+python -m app.codex_history_sync sync "$HOME/Library/Mobile Documents/com~apple~CloudDocs/codex-sync"
+```
+
+See `docs/codex_history_sync.md` for the full two-computer workflow.
+
 ## Reference Docs
 
 - `docs/kpi_catalog_spec.md`
+- `docs/codex_history_sync.md`
 - `docs/kpi_processing_flow.md`
 - `docs/database_schema_taxonomy.md`
 - `docs/function_call_graph_rag.md`
 - `docs/module_call_graph.md`
-
