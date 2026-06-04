@@ -1,3 +1,5 @@
+"""Load and summarize schema, KPI, lineage, and local CSV catalog data."""
+
 import csv
 import json
 from collections import Counter, defaultdict
@@ -8,7 +10,7 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_DOCS_PATH = PROJECT_ROOT / "app" / "rag" / "catalog" / "schema_docs" / "v2_schema_docs.json"
 KPI_CATALOG_PATH = PROJECT_ROOT / "app" / "rag" / "catalog" / "kpi_catalog.json"
-LOCAL_TABLES_DIR = PROJECT_ROOT / "data" / "v2" / "tables"
+LOCAL_TABLES_DIR = PROJECT_ROOT / "data" / "tables"
 
 
 def load_catalog_docs(path: Path = SCHEMA_DOCS_PATH) -> list[dict[str, Any]]:
@@ -277,4 +279,3 @@ def build_architecture_mermaid() -> str:
     Postgres --> Results[Results table]
     Results --> Viz[Charts and explanation]
     """
-

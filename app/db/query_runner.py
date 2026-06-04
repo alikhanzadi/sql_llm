@@ -6,10 +6,31 @@ import streamlit as st
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from psycopg2.pool import ThreadedConnectionPool
 from app.db.schema import get_active_local_schema
+
+
+_POOLS: dict[tuple[tuple[str, str], ...], ThreadedConnectionPool] = {}
+
+
+def _pool_key(conn_kwargs: dict) -> tuple[tuple[str, str], ...]:
+    """Create a stable key so equivalent connection settings share one pool."""
+    return tuple(sorted((key, str(value)) for key, value in conn_kwargs.items()))
+
+
+def _get_pool(conn_kwargs: dict) -> ThreadedConnectionPool:
+    """Return the process-local PostgreSQL pool for the provided connection settings."""
+    key = _pool_key(conn_kwargs)
+    if key not in _POOLS:
+        maxconn = int(os.getenv("POSTGRES_POOL_MAX", "5"))
+        _POOLS[key] = ThreadedConnectionPool(1, maxconn, **conn_kwargs)
+    return _POOLS[key]
+
 
 class PostgresClient:
     def __init__(self):
+        self.conn = None
+        self._pool = None
 
         # Decide environment (local vs prod)
         self.db_env = os.getenv("DB_ENV", "local").lower()
@@ -47,14 +68,24 @@ class PostgresClient:
             "sslmode": ssl_mode,
         }
 
+        options = [f"-c statement_timeout={int(os.getenv('POSTGRES_STATEMENT_TIMEOUT_MS', '15000'))}"]
         if self.db_env != "prod":
             # Set search_path at session startup for local runtime.
-            conn_kwargs["options"] = f"-c search_path={get_active_local_schema()}"
+            options.append(f"-c search_path={get_active_local_schema()}")
 
-        # Connect using the dynamically chosen SSL mode
-        self.conn = psycopg2.connect(**conn_kwargs)
+        conn_kwargs["options"] = " ".join(options)
+
+        # Reuse a small process-local pool and make each session read-only.
+        self._pool = _get_pool(conn_kwargs)
+        self.conn = self._pool.getconn()
+        self.conn.set_session(readonly=True, autocommit=True)
+
+    def __enter__(self):
+        """Support `with PostgresClient()` so callers reliably return connections."""
+        return self
 
     def run_query(self, query: str):
+        """Execute a validated read-only query and return rows or a structured error."""
         try:
             with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute(query)
@@ -63,12 +94,22 @@ class PostgresClient:
             self.conn.rollback()
             return {"error": str(e)}
 
+    def close(self):
+        """Return the active connection to the pool."""
+        if self.conn is not None and self._pool is not None:
+            self._pool.putconn(self.conn)
+            self.conn = None
+
+    def __exit__(self, exc_type, exc, tb):
+        """Close pooled resources when leaving a context manager block."""
+        self.close()
+        return False
+
 if __name__ == "__main__":
-    client = PostgresClient()
-    
     query = """
     SELECT COUNT(*) as total_trades FROM trades;
     """
-    
-    result = client.run_query(query)
+
+    with PostgresClient() as client:
+        result = client.run_query(query)
     print(result)

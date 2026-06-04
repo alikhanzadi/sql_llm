@@ -2,10 +2,66 @@
 from dotenv import load_dotenv
 load_dotenv()
 
+import re
+
 from openai import OpenAI
 from app.rag.vector_store import get_collection, query_collection
 
 client = OpenAI()
+
+
+_STOPWORDS = {
+    "a",
+    "about",
+    "all",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "by",
+    "for",
+    "from",
+    "give",
+    "how",
+    "in",
+    "is",
+    "list",
+    "many",
+    "me",
+    "of",
+    "on",
+    "or",
+    "show",
+    "the",
+    "to",
+    "total",
+    "what",
+    "which",
+    "with",
+}
+
+
+def _tokens(text: str) -> set[str]:
+    """Tokenize text while dropping low-signal question words."""
+    return {
+        token
+        for token in re.findall(r"[a-z0-9_]+", text.lower())
+        if len(token) > 2 and token not in _STOPWORDS
+    }
+
+
+def _dedupe_docs(docs: list[str]) -> list[str]:
+    """Preserve retrieval order while removing duplicate formatted documents."""
+    seen = set()
+    unique_docs = []
+    for doc in docs:
+        key = " ".join(doc.split())
+        if key in seen:
+            continue
+        seen.add(key)
+        unique_docs.append(doc)
+    return unique_docs
 
 
 # def retrieve_relevant_docs(question: str, top_k: int = 4): #cosine similarity of text
@@ -52,12 +108,31 @@ def retrieve_relevant_docs(question: str, top_k: int = 4):
     from app.rag.embeddings import load_schema_docs, format_doc
 
     raw_docs = load_schema_docs()
+    question_tokens = _tokens(question)
+    table_docs_by_name = {
+        doc.get("table"): format_doc(doc)
+        for doc in raw_docs
+        if doc.get("table")
+    }
 
     metric_docs = []
+    metric_table_docs = []
     for doc in raw_docs:
         if doc.get("type") == "metric":
-            if doc["name"].lower() in question.lower():
+            metric_text = " ".join(
+                [
+                    doc.get("name", ""),
+                    doc.get("definition", ""),
+                    doc.get("formula", ""),
+                ]
+            )
+            metric_tokens = _tokens(metric_text)
+            if doc["name"].lower() in question.lower() or len(question_tokens & metric_tokens) >= 2:
                 metric_docs.append(format_doc(doc))
+                for table_name in doc.get("required_tables", []):
+                    table_doc = table_docs_by_name.get(table_name)
+                    if table_doc:
+                        metric_table_docs.append(table_doc)
 
     # -------------------------
     # 2. Vector search (tables)
@@ -79,7 +154,7 @@ def retrieve_relevant_docs(question: str, top_k: int = 4):
     # -------------------------
     filtered_tables = []
     for t in table_docs:
-        if any(word in t.lower() for word in question.lower().split()):
+        if question_tokens & _tokens(t):
             filtered_tables.append(t)
 
     if not filtered_tables:
@@ -88,4 +163,4 @@ def retrieve_relevant_docs(question: str, top_k: int = 4):
     # -------------------------
     # 4. Final ordering
     # -------------------------
-    return metric_docs + filtered_tables
+    return _dedupe_docs(metric_docs + metric_table_docs + filtered_tables)

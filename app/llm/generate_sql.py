@@ -1,4 +1,6 @@
 import os
+from dataclasses import dataclass
+from typing import Any
 from dotenv import load_dotenv
 
 from .kpi_matcher import match_kpi
@@ -19,7 +21,17 @@ SYNONYMS = {
     "trades": ["transactions"]
 }
 
+
+@dataclass
+class SqlPlanningContext:
+    """Reusable planner, KPI, and metric decisions for one user question."""
+    plan: Any
+    kpi_decision: Any
+    metric_resolution: Any
+
+
 def clean_sql(response_text: str) -> str:
+    """Remove markdown fences so model output can be handled as raw SQL."""
     return (
         response_text
         .replace("```sql", "")
@@ -29,6 +41,7 @@ def clean_sql(response_text: str) -> str:
 
 
 def _get_client():
+    """Lazy-load the OpenAI client so imports work without installed dependencies."""
     global _client
     if _client is not None:
         return _client
@@ -39,13 +52,25 @@ def _get_client():
     _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     return _client
 
-def generate_sql(user_query: str, context: str) -> str:
-    # Step 1: Build deterministic intent plan and prompt.
+
+def build_sql_planning_context(user_query: str) -> SqlPlanningContext:
+    """Compute deterministic planning context once for generate and retry paths."""
     plan = plan_query(user_query)
     kpi_decision = match_kpi(user_query, plan)
     metric_resolution = resolve_metric(user_query)
+    return SqlPlanningContext(
+        plan=plan,
+        kpi_decision=kpi_decision,
+        metric_resolution=metric_resolution,
+    )
+
+
+def _log_planning_context(label: str, planning_context: SqlPlanningContext) -> None:
+    """Print deterministic planner/KPI/metric decisions for debugging."""
+    kpi_decision = planning_context.kpi_decision
+    metric_resolution = planning_context.metric_resolution
     print(
-        "[KPI-MATCH]",
+        f"[KPI-MATCH{label}]",
         {
             "matched_kpi_id": kpi_decision.kpi_id,
             "status": kpi_decision.status,
@@ -54,7 +79,7 @@ def generate_sql(user_query: str, context: str) -> str:
         },
     )
     print(
-        "[METRIC-RESOLVER]",
+        f"[METRIC-RESOLVER{label}]",
         {
             "matched": metric_resolution.matched,
             "metric_name": metric_resolution.metric_name,
@@ -62,6 +87,20 @@ def generate_sql(user_query: str, context: str) -> str:
             "reason": metric_resolution.reason,
         },
     )
+
+
+def generate_sql(
+    user_query: str,
+    context: str,
+    planning_context: SqlPlanningContext | None = None,
+) -> str:
+    """Generate first-pass SQL using retrieved context and deterministic planning."""
+    # Step 1: Build deterministic intent plan and prompt.
+    planning_context = planning_context or build_sql_planning_context(user_query)
+    plan = planning_context.plan
+    kpi_decision = planning_context.kpi_decision
+    metric_resolution = planning_context.metric_resolution
+    _log_planning_context("", planning_context)
 
     if kpi_decision.matched and kpi_decision.status == "blocked_by_missing_data":
         # Keep SQL-only contract while clearly surfacing unavailable KPI dependencies.
@@ -100,28 +139,19 @@ def generate_sql(user_query: str, context: str) -> str:
     return cleaned_sql
 
 # def fix_sql(user_query: str, sql: str, error: str) -> str:
-def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
-    plan = plan_query(user_query)
-    kpi_decision = match_kpi(user_query, plan)
-    metric_resolution = resolve_metric(user_query)
-    print(
-        "[KPI-MATCH-FIX]",
-        {
-            "matched_kpi_id": kpi_decision.kpi_id,
-            "status": kpi_decision.status,
-            "confidence": round(kpi_decision.confidence, 3),
-            "reason": kpi_decision.reason,
-        },
-    )
-    print(
-        "[METRIC-RESOLVER-FIX]",
-        {
-            "matched": metric_resolution.matched,
-            "metric_name": metric_resolution.metric_name,
-            "sql_expression": metric_resolution.sql_expression,
-            "reason": metric_resolution.reason,
-        },
-    )
+def fix_sql(
+    user_query: str,
+    sql: str,
+    error: str,
+    context: str,
+    planning_context: SqlPlanningContext | None = None,
+) -> str:
+    """Ask the model to repair failed SQL while reusing the original planning context."""
+    planning_context = planning_context or build_sql_planning_context(user_query)
+    plan = planning_context.plan
+    kpi_decision = planning_context.kpi_decision
+    metric_resolution = planning_context.metric_resolution
+    _log_planning_context("-FIX", planning_context)
     prompt = compose_fix_user_prompt(
         user_query=user_query,
         sql=sql,
@@ -135,7 +165,10 @@ def fix_sql(user_query: str, sql: str, error: str, context: str) -> str:
     client = _get_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
         temperature=0
     )
 

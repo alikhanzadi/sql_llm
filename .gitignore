@@ -4,6 +4,11 @@ codex14-venv
 .streamlit/
 chroma_db/
 .claude
+codex14_command_log.txt
+
+docs/my_docs/
+docs/kpi_sources/
+codex/
 
 # macOS metadata
 .DS_Store

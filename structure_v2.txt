@@ -84,7 +84,7 @@ athl-data-platform/
 │
 ├── chroma_db/                          # local vector store persistence
 ├── docker-compose.yml
-├── requirements_intel.txt
+├── requirements.txt
 ├── runtime.txt
 ├── .env
 ├── Readme.md

@@ -3,7 +3,7 @@ load_dotenv()
 
 from openai import OpenAI
 
-from app.llm.generate_sql import generate_sql
+from app.llm.generate_sql import build_sql_planning_context, generate_sql
 
 from app.db.query_runner import PostgresClient
 from app.db.validator import validate_sql, enforce_limit
@@ -37,12 +37,13 @@ def main():
     # Retrieve context once and reuse across generate/fix/debug.
     retrieval_ctx = get_retrieval_context(user_input)
     context = retrieval_ctx.text
+    planning_context = build_sql_planning_context(user_input)
 
     cache_key = user_input.strip().lower()
     sql = get_cached_sql(cache_key)
 
     if not sql:
-        sql = generate_sql(user_input, context)
+        sql = generate_sql(user_input, context, planning_context=planning_context)
         set_cached_sql(cache_key, sql)
         sql_source = "generated"
     else:
@@ -53,33 +54,39 @@ def main():
     if validate_sql(sql):
         sql = enforce_limit(sql)
 
-        client = PostgresClient()
-
-        result = get_cached_result(sql)
-        if not result:
-            result = client.run_query(sql)
-            set_cached_result(sql, result)
-        else:
-            print("\nUsing cached result\n")
-
-        # retry once if failed
-        if isinstance(result, dict) and "error" in result:
-            print("\nRetrying with fixed SQL...\n")
-
-            # CHANGED (pass context into fix_sql)
-            fixed_sql = fix_sql(user_input, sql, result["error"], context)
-            print("Fixed SQL:\n", fixed_sql)
-            # fixed_sql = fix_sql(user_input, sql, result["error"])
-            # print("Fixed SQL:\n", fixed_sql)
-
-            result = get_cached_result(fixed_sql)
+        with PostgresClient() as client:
+            result = get_cached_result(sql)
             if not result:
-                result = client.run_query(fixed_sql)
-                set_cached_result(fixed_sql, result)
+                result = client.run_query(sql)
+                set_cached_result(sql, result)
             else:
-                print("\nUsing cached result (fixed SQL)\n")
+                print("\nUsing cached result\n")
 
-            sql = fixed_sql
+            # retry once if failed
+            if isinstance(result, dict) and "error" in result:
+                print("\nRetrying with fixed SQL...\n")
+
+                fixed_sql = fix_sql(
+                    user_input,
+                    sql,
+                    result["error"],
+                    context,
+                    planning_context=planning_context,
+                )
+                print("Fixed SQL:\n", fixed_sql)
+
+                if validate_sql(fixed_sql):
+                    fixed_sql = enforce_limit(fixed_sql)
+                    result = get_cached_result(fixed_sql)
+                    if not result:
+                        result = client.run_query(fixed_sql)
+                        set_cached_result(fixed_sql, result)
+                    else:
+                        print("\nUsing cached result (fixed SQL)\n")
+
+                    sql = fixed_sql
+                else:
+                    result = {"error": "Retry SQL did not pass the SELECT-only validator."}
 
     else:
         result = {"error": "Invalid or unsafe SQL"}

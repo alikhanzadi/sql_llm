@@ -34,7 +34,7 @@ from app.catalog_explorer import (  # noqa: E402
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-LOCAL_TABLES_DIR = PROJECT_ROOT / "data" / "v2" / "tables"
+LOCAL_TABLES_DIR = PROJECT_ROOT / "data" / "tables"
 
 
 st.set_page_config(
@@ -661,14 +661,15 @@ def _run_nl_query(question: str) -> dict[str, Any]:
     from app.db.query_runner import PostgresClient
     from app.db.validator import enforce_limit, validate_sql
     from app.llm.explain_results import explain_results
-    from app.llm.generate_sql import fix_sql, generate_sql
+    from app.llm.generate_sql import build_sql_planning_context, fix_sql, generate_sql
     from app.rag.context_service import get_retrieval_context
     from app.rag.ingest import run_ingest
 
     run_ingest()
     retrieval_ctx = get_retrieval_context(question)
     context = retrieval_ctx.text
-    sql = generate_sql(question, context)
+    planning_context = build_sql_planning_context(question)
+    sql = generate_sql(question, context, planning_context=planning_context)
 
     if not validate_sql(sql):
         return {
@@ -680,15 +681,23 @@ def _run_nl_query(question: str) -> dict[str, Any]:
         }
 
     sql = enforce_limit(sql, limit=100)
-    client = PostgresClient()
-    result = client.run_query(sql)
+    with PostgresClient() as client:
+        result = client.run_query(sql)
 
-    if isinstance(result, dict) and "error" in result:
-        fixed_sql = fix_sql(question, sql, result["error"], context)
-        if validate_sql(fixed_sql):
-            fixed_sql = enforce_limit(fixed_sql, limit=100)
-            result = client.run_query(fixed_sql)
-            sql = fixed_sql
+        if isinstance(result, dict) and "error" in result:
+            fixed_sql = fix_sql(
+                question,
+                sql,
+                result["error"],
+                context,
+                planning_context=planning_context,
+            )
+            if validate_sql(fixed_sql):
+                fixed_sql = enforce_limit(fixed_sql, limit=100)
+                result = client.run_query(fixed_sql)
+                sql = fixed_sql
+            else:
+                result = {"error": "Retry SQL did not pass the SELECT-only validator."}
 
     if isinstance(result, dict) and "error" in result:
         return {
