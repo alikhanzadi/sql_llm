@@ -3,9 +3,13 @@
 import os
 import csv
 import psycopg2
+from pathlib import Path
 from psycopg2 import sql
 from io import StringIO
 from dotenv import load_dotenv
+
+TABLES_DIR = Path(__file__).resolve().parent.parent / "tables"
+TABLES_DIR.mkdir(parents=True, exist_ok=True)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -421,7 +425,25 @@ for _, token in tokens_df_temp.iterrows():
 transactions_df = pd.DataFrame(transactions)
 transactions_df["total_amount_usdc"] = transactions_df["total_amount_usdc"].astype(float).round(6)
 
-transactions_df.to_csv("./tables/transactions.csv", index=False)
+transactions_df.to_csv(TABLES_DIR / "transactions.csv", index=False)
+
+
+# ------------------------
+# ISSUER DAILY REVENUE
+# ------------------------
+user_to_issuer = {user_id: issuer_id for issuer_id, user_id in issuer_to_user.items()}
+
+issuer_daily_revenue_df = (
+    transactions_df
+    .assign(issuer_id=lambda df: df["seller_id"].map(user_to_issuer))
+    .groupby(["issuer_id", "timestamp"], as_index=False)
+    .agg(total_amount_usdc=("total_amount_usdc", "sum"))
+)
+issuer_daily_revenue_df["total_amount_usdc"] = (
+    0.8 * issuer_daily_revenue_df["total_amount_usdc"]
+).round(6)
+issuer_daily_revenue_df = issuer_daily_revenue_df.rename(columns={"timestamp": "date"})
+issuer_daily_revenue_df.to_csv(TABLES_DIR / "issuer_daily_revenue.csv", index=False)
 
 
 # ------------------------
@@ -558,6 +580,9 @@ copy_data(conn_string, preferences_df,'issuer_preferences')
 
 truncate_table(conn_string, 'transactions', cascade=True)
 copy_data(conn_string, transactions_df,'transactions')
+
+truncate_table(conn_string, 'issuer_daily_revenue', cascade=True)
+copy_data(conn_string, issuer_daily_revenue_df, 'issuer_daily_revenue')
 
 truncate_table(conn_string, 'user_token_wallet', cascade=True)
 copy_data(conn_string, user_token_wallet_df,'user_token_wallet')

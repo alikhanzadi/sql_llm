@@ -288,5 +288,5 @@ CREATE TABLE IF NOT EXISTS issuer_daily_revenue (
   PRIMARY KEY (issuer_id, date),
 
   CONSTRAINT fk_rev_issuer
-    FOREIGN KEY (issuer_id) REFERENCES users(user_id)
+    FOREIGN KEY (issuer_id) REFERENCES issuers(issuer_id)
 );

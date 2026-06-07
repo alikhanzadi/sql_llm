@@ -1380,14 +1380,14 @@
         "columns": [
           "issuer_id"
         ],
-        "references_table": "users",
+        "references_table": "issuers",
         "references_columns": [
-          "user_id"
+          "issuer_id"
         ]
       }
     ],
     "join_hints": [
-      "issuer_daily_revenue.issuer_id = users.user_id"
+      "issuer_daily_revenue.issuer_id = issuers.issuer_id"
     ],
     "time_columns": [
       "date"
