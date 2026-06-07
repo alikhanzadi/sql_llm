@@ -7,8 +7,8 @@ chroma_db/
 *.code-workspace
 codex14_command_log.txt
 
-# Local migration backups (undo artifacts)
-data/local_athl_v2/migrations/backups/
+# Local DB migration scripts and backups (not tracked)
+data/local_athl_v2/migrations/
 
 docs/my_docs/
 docs/kpi_sources/
