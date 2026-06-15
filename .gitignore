@@ -10,6 +10,7 @@ codex14_command_log.txt
 # Local DB migration scripts and backups (not tracked)
 data/local_athl_v2/migrations/
 
+# doc
 docs/my_docs/
 docs/kpi_sources/
 codex/

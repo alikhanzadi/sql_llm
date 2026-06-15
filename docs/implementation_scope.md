@@ -1,5 +1,10 @@
 # Layer 1 Implementation Scope (Step 1 Restart)
 
+> **PARTIALLY SUPERSEDED — read before using.** As of 2026-06-15, the KPI **sizing and tiering** in this document are superseded by `kpi_canonical_list.md`: the canonical set is now the **full north star active set** (~55 KPIs), the catalog is **flat (no Tier A/B/C, no tier_1/tier_2)**, and matcher priority is handled by deliberate aliases + per-cluster default-resolution. The **architecture remains current and authoritative**: KPIs as an optional accelerator over deterministic schema grounding, the intent taxonomy, single-context retrieval, confidence-gated matching, and assertion-based eval. Treat the "10–15 Tier A" / "v2.1 semantic layer" framing below as historical rationale only.
+
+---
+
+
 ## Goal
 Build a reliable NL-to-SQL layer with broad schema coverage by grounding SQL generation in deterministic schema context (tables, columns, joins), while treating KPIs as optional semantic accelerators.
 
