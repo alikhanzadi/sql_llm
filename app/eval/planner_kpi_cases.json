@@ -20,14 +20,6 @@
       "expected_kpi_status": "active"
     },
     {
-      "id": "active_waitlist_approval",
-      "question": "What is waitlist approval rate by issuer type?",
-      "expected_intent": "avg_per_entity",
-      "expected_time_grain": "all_time",
-      "expected_kpi_id": "waitlist_approval_rate",
-      "expected_kpi_status": "active"
-    },
-    {
       "id": "active_top_tokens_7d",
       "question": "Top tokens traded in the last 7 days",
       "expected_intent": "top_k",
@@ -36,12 +28,52 @@
       "expected_kpi_status": "active"
     },
     {
-      "id": "blocked_login_attempts",
-      "question": "Show login attempts by day",
-      "expected_intent": "trend",
-      "expected_time_grain": "day",
-      "expected_kpi_id": "login_attempt_volume",
-      "expected_kpi_status": "blocked_by_missing_data"
+      "id": "active_total_token_revenue",
+      "question": "What is total token revenue this month?",
+      "expected_intent": "sum",
+      "expected_time_grain": "month",
+      "expected_kpi_id": "total_token_revenue",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "active_issuer_revenue",
+      "question": "How much did each issuer earn?",
+      "expected_intent": "join_lookup",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": "issuer_revenue",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "active_platform_fee",
+      "question": "How much does the platform make in fees?",
+      "expected_intent": "join_lookup",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": "platform_fee_revenue",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "active_token_holders",
+      "question": "Which tokens have the most holders?",
+      "expected_intent": "join_lookup",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": "token_holders_count",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "active_verification_pass",
+      "question": "What is the issuer verification pass rate?",
+      "expected_intent": "avg_per_entity",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": "verification_pass_rate",
+      "expected_kpi_status": "active"
+    },
+    {
+      "id": "disambig_bare_revenue",
+      "question": "How much revenue did we make?",
+      "expected_intent": "sum",
+      "expected_time_grain": "all_time",
+      "expected_kpi_id": "total_token_revenue",
+      "expected_kpi_status": "active"
     },
     {
       "id": "schema_fallback_basic_count",
@@ -58,9 +90,9 @@
       "expected_kpi_id": null
     },
     {
-      "id": "schema_fallback_avg_vs_median_traded_per_day",
-      "question": "How many tokens have been traded on average per day and how does it compare with the median traded per day?",
-      "expected_intent": "avg_per_entity",
+      "id": "schema_fallback_cohort_join",
+      "question": "How many users signed up on the same day they made their first purchase?",
+      "expected_intent": "count",
       "expected_time_grain": "day",
       "expected_kpi_id": null
     }

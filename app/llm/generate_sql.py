@@ -4,7 +4,6 @@ from typing import Any
 from dotenv import load_dotenv
 
 from .kpi_matcher import match_kpi
-from .metric_resolver import resolve_metric
 from .planner import plan_query
 from .prompts import SYSTEM_PROMPT, compose_fix_user_prompt, compose_sql_user_prompt
 
@@ -24,10 +23,9 @@ SYNONYMS = {
 
 @dataclass
 class SqlPlanningContext:
-    """Reusable planner, KPI, and metric decisions for one user question."""
+    """Reusable planner and KPI decisions for one user question."""
     plan: Any
     kpi_decision: Any
-    metric_resolution: Any
 
 
 def clean_sql(response_text: str) -> str:
@@ -57,18 +55,15 @@ def build_sql_planning_context(user_query: str) -> SqlPlanningContext:
     """Compute deterministic planning context once for generate and retry paths."""
     plan = plan_query(user_query)
     kpi_decision = match_kpi(user_query, plan)
-    metric_resolution = resolve_metric(user_query)
     return SqlPlanningContext(
         plan=plan,
         kpi_decision=kpi_decision,
-        metric_resolution=metric_resolution,
     )
 
 
 def _log_planning_context(label: str, planning_context: SqlPlanningContext) -> None:
-    """Print deterministic planner/KPI/metric decisions for debugging."""
+    """Print deterministic planner/KPI decisions for debugging."""
     kpi_decision = planning_context.kpi_decision
-    metric_resolution = planning_context.metric_resolution
     print(
         f"[KPI-MATCH{label}]",
         {
@@ -76,15 +71,6 @@ def _log_planning_context(label: str, planning_context: SqlPlanningContext) -> N
             "status": kpi_decision.status,
             "confidence": round(kpi_decision.confidence, 3),
             "reason": kpi_decision.reason,
-        },
-    )
-    print(
-        f"[METRIC-RESOLVER{label}]",
-        {
-            "matched": metric_resolution.matched,
-            "metric_name": metric_resolution.metric_name,
-            "sql_expression": metric_resolution.sql_expression,
-            "reason": metric_resolution.reason,
         },
     )
 
@@ -95,15 +81,12 @@ def generate_sql(
     planning_context: SqlPlanningContext | None = None,
 ) -> str:
     """Generate first-pass SQL using retrieved context and deterministic planning."""
-    # Step 1: Build deterministic intent plan and prompt.
     planning_context = planning_context or build_sql_planning_context(user_query)
     plan = planning_context.plan
     kpi_decision = planning_context.kpi_decision
-    metric_resolution = planning_context.metric_resolution
     _log_planning_context("", planning_context)
 
     if kpi_decision.matched and kpi_decision.status == "blocked_by_missing_data":
-        # Keep SQL-only contract while clearly surfacing unavailable KPI dependencies.
         blocked_text = kpi_decision.blocked_message().replace("'", "''")
         return (
             "SELECT "
@@ -115,10 +98,8 @@ def generate_sql(
         context=context,
         plan_block=plan.to_prompt_block(),
         kpi_block=kpi_decision.to_prompt_block(),
-        metric_block=metric_resolution.to_prompt_block(),
     )
 
-    # Step 2: Call LLM
     client = _get_client()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -138,7 +119,7 @@ def generate_sql(
 
     return cleaned_sql
 
-# def fix_sql(user_query: str, sql: str, error: str) -> str:
+
 def fix_sql(
     user_query: str,
     sql: str,
@@ -150,7 +131,6 @@ def fix_sql(
     planning_context = planning_context or build_sql_planning_context(user_query)
     plan = planning_context.plan
     kpi_decision = planning_context.kpi_decision
-    metric_resolution = planning_context.metric_resolution
     _log_planning_context("-FIX", planning_context)
     prompt = compose_fix_user_prompt(
         user_query=user_query,
@@ -159,7 +139,6 @@ def fix_sql(
         context=context,
         plan_block=plan.to_prompt_block(),
         kpi_block=kpi_decision.to_prompt_block(),
-        metric_block=metric_resolution.to_prompt_block(),
     )
 
     client = _get_client()

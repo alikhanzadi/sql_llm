@@ -1,863 +1,3421 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "catalog_name": "athl_kpi_catalog",
   "taxonomy_context": {
-    "source_doc": "docs/database_schema_taxonomy.md",
+    "source_doc": "docs/kpi_canonical_list.md",
     "source_of_truth_principle": "transactions is source of truth; state and aggregates are derived layers",
     "table_roles": {
-      "dimension": ["users", "issuers", "athlete_profile", "creator_profile"],
-      "event": ["transactions", "identity_verification", "social_verification"],
-      "state": ["tokens", "user_token_wallet", "user_wallet", "issuer_post_signup"],
-      "aggregate": ["issuer_daily_revenue"],
-      "config": ["issuer_preferences"]
+      "dimension": [
+        "users",
+        "issuers",
+        "athlete_profile",
+        "creator_profile"
+      ],
+      "event": [
+        "transactions",
+        "identity_verification",
+        "social_verification"
+      ],
+      "state": [
+        "tokens",
+        "user_token_wallet",
+        "user_wallet",
+        "issuer_post_signup"
+      ],
+      "aggregate": [
+        "issuer_daily_revenue"
+      ],
+      "config": [
+        "issuer_preferences"
+      ]
     }
   },
   "taxonomy_metric_coverage": {
-    "source_doc": "docs/database_schema_taxonomy.md",
-    "strategy": "Tiered canonical model: tier_1 and tier_2 canonical KPIs live in this file; full taxonomy metric dictionary remains in schema_docs metric entries.",
-    "coverage_last_updated": "2026-05-13",
+    "source_doc": "docs/kpi_canonical_list.md",
+    "strategy": "Flat catalog. Full north star active set (62 KPIs). No tiers. Matcher priority handled by deliberate aliases and per-cluster default-resolution.",
+    "coverage_last_updated": "2026-06-16",
     "kpi_direct_matches": [
-      "profile_completion_rate_by_issuer_type",
-      "id_verification_opt_in_rate",
+      "total_token_revenue",
+      "total_transactions",
+      "average_transaction_size_usdc",
+      "average_token_price",
+      "token_price_growth_rate",
+      "active_tradable_tokens",
+      "tokens_with_no_trading_activity",
+      "total_market_capitalization",
+      "token_liquidity_velocity",
+      "token_holders_count",
+      "token_holder_distribution",
+      "wallet_concentration_ratio",
+      "top_tokens_share_of_volume",
+      "token_leaderboard_most_traded",
+      "buy_vs_sell_ratio",
+      "secondary_market_share",
+      "failed_reversed_transactions",
+      "net_new_users",
+      "total_registered_users",
+      "user_growth_rate",
+      "active_traders",
+      "active_sellers",
+      "buyer_to_seller_ratio",
+      "repeat_buyer_rate",
+      "multi_token_ownership_rate",
+      "average_wallet_balance",
+      "funded_wallet_rate",
+      "mfa_adoption_rate",
+      "verified_email_rate",
+      "total_issuers",
+      "verified_issuers",
+      "verification_pass_rate",
       "id_verification_pass_rate",
+      "id_verification_opt_in_rate",
       "id_verification_completion_rate",
       "manual_review_rate",
-      "social_verification_success_rate",
+      "social_verification_pass_rate",
       "social_verification_retry_rate",
+      "issuer_activation_rate",
+      "token_launch_success_rate",
+      "issuer_revenue",
+      "average_revenue_per_issuer",
+      "top_issuer_revenue_share",
+      "issuer_revenue_growth",
+      "issuers_with_zero_revenue",
+      "athlete_vs_creator_split",
+      "social_reach_verified_issuers",
+      "profile_completion_rate_by_issuer_type",
+      "issuer_onboarding_completion_rate",
+      "wallet_provisioning_success_rate",
+      "oauth_verification_completion_rate",
       "amount_raised_vs_target",
       "percent_supply_sold_30d",
-      "issuer_daily_revenue",
-      "total_platform_revenue",
-      "active_trading_users",
-      "participation_rate",
-      "average_transaction_size_usdc",
-      "average_tokens_per_transaction",
-      "tokens_issued_count",
-      "total_supply_issued",
-      "token_number_of_buyers",
-      "average_selling_price",
-      "total_purchases_by_user"
-    ],
-    "schema_metric_docs_expected": [
-      "Total Revenue (Lifetime)",
-      "Daily Revenue",
-      "Tokens Issued (Count)",
-      "Total Supply Issued",
-      "Tokens Sold",
-      "Sell-through Rate",
-      "Average Selling Price (ASP)",
-      "Latest Price",
-      "Numbers Sold",
-      "Current Price (Last Sold)",
-      "Next Price (Marginal)",
-      "Total Revenue Raised",
-      "Average Price",
-      "Volume",
-      "Number of Buyers",
-      "Tokens Held",
-      "Total Token Portfolio Value",
-      "USDC Balance",
-      "ETH Balance",
-      "Number of Tokens Owned",
-      "Total Purchases",
-      "Total Platform Revenue",
-      "Active Users",
-      "Participation Rate",
-      "Total Tokens Sold",
-      "Average Transaction Size",
-      "Average Tokens per Transaction",
-      "Price at n",
-      "Batch Cost",
-      "Revenue Consistency Check"
+      "supply_remaining",
+      "average_revenue_per_token",
+      "revenue_growth_rate",
+      "revenue_concentration",
+      "platform_fee_revenue",
+      "suspended_accounts",
+      "failed_identity_checks",
+      "high_risk_wallet_concentration",
+      "country_distribution"
     ]
+  },
+  "revenue_cluster": {
+    "default": "total_token_revenue",
+    "members": [
+      "total_token_revenue",
+      "issuer_revenue",
+      "platform_fee_revenue"
+    ],
+    "note": "Bare 'revenue' always resolves to total_token_revenue. Aliases are non-overlapping across members."
   },
   "kpis": [
     {
-      "kpi_id": "issuer_type_distribution",
-      "name": "Issuer Type Distribution",
-      "category": "onboarding",
+      "kpi_id": "total_token_revenue",
+      "name": "Total Token Revenue",
+      "category": "finance",
+      "section": "A",
       "status": "active",
-      "tier": "tier_1",
-      "owner_team": "Segmentation / Customer Analytics",
-      "business_definition": "Distribution of issuers by issuer type (athlete vs creator).",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["issuer_type", "country", "level"],
-      "required_tables": ["issuers"],
-      "required_columns": ["issuers.issuer_id", "issuers.issuer_type", "issuers.country", "issuers.level"],
+      "value_basis": "token_revenue_gross",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Total USDC value of completed transactions, platform-wide. Group by token_id for per-token revenue. This is the same number sometimes called GTV; it is revenue, not a trade count or quantity.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain",
+        "token_id",
+        "issuer_id"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.total_amount_usdc",
+        "transactions.status",
+        "transactions.timestamp"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "sum_grouped",
+        "numerator": "SUM(transactions.total_amount_usdc)",
+        "denominator": null,
+        "group_by": [
+          "DATE(transactions.timestamp)"
+        ]
+      },
+      "example_questions": [
+        "What is total token revenue this month?",
+        "How much revenue did we make?",
+        "Total sales revenue last week",
+        "How much revenue did token X generate?",
+        "Show me GTV by day"
+      ],
+      "quality_notes": [
+        "Status is lowercase 'completed' \u2014 never 'COMPLETED'. Filter: lower(status) = 'completed'.",
+        "Equals SUM(tokens.total_revenue) by construction.",
+        "'volume' is NOT an alias of this metric."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "revenue",
+        "total revenue",
+        "token revenue",
+        "token sales",
+        "sales revenue",
+        "GTV",
+        "gross transaction volume"
+      ]
+    },
+    {
+      "kpi_id": "total_transactions",
+      "name": "Total Transactions",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Count of completed transactions platform-wide.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain",
+        "token_id"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.transaction_id",
+        "transactions.status",
+        "transactions.timestamp"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(transactions.transaction_id)",
+        "denominator": null,
+        "group_by": [
+          "DATE(transactions.timestamp)"
+        ]
+      },
+      "example_questions": [
+        "How many transactions were completed this month?",
+        "Total number of trades this week",
+        "Transaction count by day"
+      ],
+      "quality_notes": [
+        "Status lowercase: lower(status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "transaction count",
+        "number of transactions",
+        "trade count",
+        "number of trades",
+        "transactions were completed",
+        "completed transactions"
+      ]
+    },
+    {
+      "kpi_id": "average_transaction_size_usdc",
+      "name": "Average Transaction Size (USDC)",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Finance / Analytics",
+      "business_definition": "Average USDC value per completed transaction.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain",
+        "token_id"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.total_amount_usdc",
+        "transactions.status",
+        "transactions.timestamp"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "average",
+        "numerator": "SUM(transactions.total_amount_usdc)",
+        "denominator": "COUNT(transactions.transaction_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the average transaction size in USDC?",
+        "Average trade value this month",
+        "Mean transaction amount"
+      ],
+      "quality_notes": [
+        "Filter: lower(status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "average transaction value",
+        "avg transaction size",
+        "mean trade size"
+      ]
+    },
+    {
+      "kpi_id": "average_token_price",
+      "name": "Average Token Price",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Average current_price across all tokens. current_price is a bonding-curve function of total_sold, not an independent market price.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "tokens"
+      ],
+      "required_columns": [
+        "tokens.current_price",
+        "tokens.token_id"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "average",
+        "numerator": "SUM(tokens.current_price)",
+        "denominator": "COUNT(tokens.token_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the average token price across the platform?",
+        "Average price of all tokens",
+        "Mean token price by issuer type"
+      ],
+      "quality_notes": [
+        "current_price is bonding-curve derived, not a market price."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "average price",
+        "mean token price",
+        "avg token price"
+      ]
+    },
+    {
+      "kpi_id": "token_price_growth_rate",
+      "name": "Token Price Growth Rate",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Price change per token over a window, derived from ending_price ordered by timestamp. Powers top-gainers view. No price-history table \u2014 reconstruct from transactions.",
+      "time_grains": [
+        "day",
+        "week",
+        "month"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.token_id",
+        "transactions.ending_price",
+        "transactions.timestamp",
+        "transactions.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH ordered AS (SELECT token_id, ending_price, ROW_NUMBER() OVER (PARTITION BY token_id ORDER BY timestamp ASC) AS rn_first, ROW_NUMBER() OVER (PARTITION BY token_id ORDER BY timestamp DESC) AS rn_last FROM transactions WHERE lower(status)='completed') SELECT f.token_id, f.ending_price AS start_price, l.ending_price AS end_price, (l.ending_price - f.ending_price) / NULLIF(f.ending_price, 0) AS price_growth_rate FROM ordered f JOIN ordered l ON f.token_id = l.token_id WHERE f.rn_first = 1 AND l.rn_last = 1"
+      },
+      "example_questions": [
+        "Which tokens have gained the most in price this week?",
+        "Top token price gainers",
+        "Price change rate per token",
+        "Token price growth"
+      ],
+      "quality_notes": [
+        "No price-history table \u2014 reconstruct from transactions.ending_price ordered by timestamp.",
+        "Filter: lower(status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "price growth",
+        "price change",
+        "token price change",
+        "top gainers",
+        "price appreciation"
+      ]
+    },
+    {
+      "kpi_id": "active_tradable_tokens",
+      "name": "Active Tradable Tokens",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Tokens with paused_sales = false and at least one completed transaction.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "tokens",
+        "transactions"
+      ],
+      "required_columns": [
+        "tokens.token_id",
+        "tokens.paused_sales",
+        "transactions.token_id",
+        "transactions.status"
+      ],
+      "required_joins": [
+        "tokens.token_id = transactions.token_id"
+      ],
+      "filters_defaults": [
+        "tokens.paused_sales = false",
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(DISTINCT tokens.token_id)",
+        "denominator": null,
+        "group_by": []
+      },
+      "example_questions": [
+        "How many tokens are actively tradable?",
+        "Count of live tokens with sales",
+        "Active tokens on the platform"
+      ],
+      "quality_notes": [
+        "Must join tokens to transactions and filter paused_sales = false AND lower(status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "live tradable tokens",
+        "active tokens",
+        "tokens with activity"
+      ]
+    },
+    {
+      "kpi_id": "tokens_with_no_trading_activity",
+      "name": "Tokens With No Trading Activity",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Tokens with zero completed transactions.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "tokens",
+        "transactions"
+      ],
+      "required_columns": [
+        "tokens.token_id",
+        "transactions.token_id",
+        "transactions.status"
+      ],
+      "required_joins": [],
+      "multi_table_rationale": "Anti-join: tokens LEFT JOIN completed transactions, filter WHERE transaction is NULL.",
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "SELECT COUNT(DISTINCT t.token_id) AS tokens_with_no_activity FROM tokens t LEFT JOIN transactions tx ON t.token_id = tx.token_id AND lower(tx.status)='completed' WHERE tx.transaction_id IS NULL"
+      },
+      "example_questions": [
+        "How many tokens have never been traded?",
+        "Tokens with zero sales",
+        "Inactive tokens with no transactions"
+      ],
+      "quality_notes": [
+        "Anti-join on completed transactions."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "inactive tokens",
+        "unsold tokens",
+        "tokens with zero trades",
+        "tokens with no sales",
+        "never been traded",
+        "tokens never traded"
+      ]
+    },
+    {
+      "kpi_id": "total_market_capitalization",
+      "name": "Total Market Capitalization",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Finance / Analytics",
+      "business_definition": "SUM(current_price x total_sold) across all tokens. Circulating supply = total_sold (never current_supply_minted which is always 0).",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "tokens"
+      ],
+      "required_columns": [
+        "tokens.token_id",
+        "tokens.current_price",
+        "tokens.total_sold"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "sum_grouped",
+        "numerator": "SUM(tokens.current_price * tokens.total_sold)",
+        "denominator": null,
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the total market cap of all tokens?",
+        "Platform market capitalization",
+        "Total value of all tokens in circulation"
+      ],
+      "quality_notes": [
+        "Use total_sold as circulating supply \u2014 current_supply_minted is always 0 in current data.",
+        "current_price is bonding-curve derived, not a market price."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "market cap",
+        "total market cap",
+        "platform market cap",
+        "total token market value"
+      ]
+    },
+    {
+      "kpi_id": "token_liquidity_velocity",
+      "name": "Token Liquidity Velocity",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Traded quantity divided by total_sold per token. Measures turnover rate.",
+      "time_grains": [
+        "day",
+        "week",
+        "month"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "transactions",
+        "tokens"
+      ],
+      "required_columns": [
+        "transactions.token_id",
+        "transactions.quantity",
+        "transactions.status",
+        "tokens.total_sold"
+      ],
+      "required_joins": [
+        "transactions.token_id = tokens.token_id"
+      ],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "SUM(transactions.quantity)",
+        "denominator": "MAX(tokens.total_sold)",
+        "group_by": [
+          "transactions.token_id"
+        ]
+      },
+      "example_questions": [
+        "What is the trading velocity for each token?",
+        "Token turnover rate",
+        "How fast are tokens turning over?",
+        "Liquidity velocity by token"
+      ],
+      "quality_notes": [
+        "Filter: lower(transactions.status) = 'completed'. Join transactions to tokens on token_id."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "trading velocity",
+        "token turnover",
+        "liquidity ratio",
+        "turnover rate"
+      ]
+    },
+    {
+      "kpi_id": "token_holders_count",
+      "name": "Token Holders Count",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Distinct holders per token (users with quantity > 0). Powers ATHLScan holders view and most-holders leaderboard.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "user_token_wallet"
+      ],
+      "required_columns": [
+        "user_token_wallet.token_id",
+        "user_token_wallet.user_id",
+        "user_token_wallet.quantity"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "user_token_wallet.quantity > 0"
+      ],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(DISTINCT user_token_wallet.user_id)",
+        "denominator": null,
+        "group_by": [
+          "user_token_wallet.token_id"
+        ]
+      },
+      "example_questions": [
+        "How many holders does each token have?",
+        "Which tokens have the most holders?",
+        "Token holder count",
+        "Number of unique holders per token"
+      ],
+      "quality_notes": [
+        "Filter quantity > 0. Use COUNT(DISTINCT user_id) per token_id."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "holders per token",
+        "token holder count",
+        "most holders",
+        "unique holders",
+        "number of holders"
+      ]
+    },
+    {
+      "kpi_id": "token_holder_distribution",
+      "name": "Token Holder Distribution",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Distribution of holdings within a token across holders.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "user_token_wallet"
+      ],
+      "required_columns": [
+        "user_token_wallet.token_id",
+        "user_token_wallet.user_id",
+        "user_token_wallet.quantity"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "user_token_wallet.quantity > 0"
+      ],
+      "sql_recipe": {
+        "pattern": "sum_grouped",
+        "numerator": "SUM(user_token_wallet.quantity)",
+        "denominator": null,
+        "group_by": [
+          "user_token_wallet.token_id",
+          "user_token_wallet.user_id"
+        ]
+      },
+      "example_questions": [
+        "How are token holdings distributed among holders?",
+        "Holder distribution for a token",
+        "Show me the holding breakdown per wallet"
+      ],
+      "quality_notes": [
+        "Filter quantity > 0."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "holding distribution",
+        "holder breakdown",
+        "wallet distribution"
+      ]
+    },
+    {
+      "kpi_id": "wallet_concentration_ratio",
+      "name": "Wallet Concentration Ratio",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Risk / Analytics",
+      "business_definition": "Share of holdings held by top wallets per token \u2014 whale concentration detection.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "user_token_wallet"
+      ],
+      "required_columns": [
+        "user_token_wallet.token_id",
+        "user_token_wallet.user_id",
+        "user_token_wallet.quantity"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "user_token_wallet.quantity > 0"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH ranked AS (SELECT token_id, user_id, quantity, SUM(quantity) OVER (PARTITION BY token_id) AS total_qty, RANK() OVER (PARTITION BY token_id ORDER BY quantity DESC) AS rnk FROM user_token_wallet WHERE quantity > 0) SELECT token_id, SUM(CASE WHEN rnk <= 5 THEN quantity ELSE 0 END) / NULLIF(MAX(total_qty), 0) AS top5_concentration FROM ranked GROUP BY token_id"
+      },
+      "example_questions": [
+        "What is the wallet concentration for each token?",
+        "Are any tokens dominated by whale wallets?",
+        "Top 5 holder concentration ratio"
+      ],
+      "quality_notes": [
+        "Default: top 5 holders. Adjust N as needed."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "whale concentration",
+        "holder concentration",
+        "top holder share",
+        "concentration ratio",
+        "wallet concentration"
+      ]
+    },
+    {
+      "kpi_id": "top_tokens_share_of_volume",
+      "name": "Top Tokens Share of Volume",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Share of total transaction volume held by the top-N tokens. Volume concentration risk metric.",
+      "time_grains": [
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "transactions",
+        "tokens"
+      ],
+      "required_columns": [
+        "transactions.token_id",
+        "transactions.total_amount_usdc",
+        "transactions.status"
+      ],
+      "required_joins": [
+        "transactions.token_id = tokens.token_id"
+      ],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH token_vol AS (SELECT token_id, SUM(total_amount_usdc) AS vol FROM transactions WHERE lower(status)='completed' GROUP BY token_id), total AS (SELECT SUM(vol) AS grand_total FROM token_vol) SELECT t.token_id, t.vol / NULLIF(tt.grand_total, 0) AS share FROM token_vol t CROSS JOIN total tt ORDER BY share DESC LIMIT 10"
+      },
+      "example_questions": [
+        "What share of volume do the top 10 tokens account for?",
+        "Volume concentration across tokens",
+        "Top tokens by share of total volume"
+      ],
+      "quality_notes": [
+        "Filter: lower(transactions.status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "volume share",
+        "token volume concentration",
+        "top token volume share"
+      ]
+    },
+    {
+      "kpi_id": "token_leaderboard_most_traded",
+      "name": "Top Tokens by Volume",
+      "category": "leaderboard",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Token ranking by traded volume or transaction count in a time window. Leaderboard guardrail: only matches ranking-style questions.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id",
+        "issuer_type",
+        "time_window"
+      ],
+      "required_tables": [
+        "transactions",
+        "tokens"
+      ],
+      "required_columns": [
+        "transactions.token_id",
+        "transactions.total_amount_usdc",
+        "transactions.status",
+        "transactions.timestamp",
+        "tokens.token_symbol",
+        "tokens.issuer_id"
+      ],
+      "required_joins": [
+        "transactions.token_id = tokens.token_id"
+      ],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "SELECT t.token_id, tk.token_symbol, SUM(t.total_amount_usdc) AS volume, COUNT(t.transaction_id) AS trade_count FROM transactions t JOIN tokens tk ON t.token_id = tk.token_id WHERE lower(t.status)='completed' GROUP BY t.token_id, tk.token_symbol ORDER BY volume DESC LIMIT 10"
+      },
+      "example_questions": [
+        "What are the top 10 tokens by trading volume this week?",
+        "Which tokens have the highest trading volume?",
+        "Token leaderboard by volume",
+        "Most traded tokens this month",
+        "Rank tokens by volume"
+      ],
+      "quality_notes": [
+        "Leaderboard guardrail: only matches ranking-intent questions (top, most, rank, highest).",
+        "Filter: lower(transactions.status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "top tokens",
+        "token leaderboard",
+        "most traded tokens",
+        "token ranking",
+        "highest volume tokens",
+        "tokens are traded the most",
+        "most traded",
+        "traded the most",
+        "tokens traded",
+        "top traded tokens",
+        "tokens by volume"
+      ]
+    },
+    {
+      "kpi_id": "buy_vs_sell_ratio",
+      "name": "Buy vs Sell Ratio",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Ratio of buy-side to sell-side transaction activity. Degenerate on current data \u2014 all transactions are primary sales.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.transaction_id",
+        "transactions.transaction_type",
+        "transactions.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(CASE WHEN transaction_type = 'primary' THEN 1 END)",
+        "denominator": "COUNT(transaction_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the buy to sell ratio?",
+        "Ratio of buys to sells",
+        "Buy side vs sell side activity"
+      ],
+      "quality_notes": [
+        "All transactions are transaction_type='primary' in current data \u2014 secondary market does not exist yet."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "buy sell ratio",
+        "buy to sell",
+        "buyer seller ratio"
+      ]
+    },
+    {
+      "kpi_id": "secondary_market_share",
+      "name": "Secondary Market Share",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Share of volume from secondary (peer-to-peer) trading. Currently 0% \u2014 no secondary trading exists.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.total_amount_usdc",
+        "transactions.transaction_type",
+        "transactions.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "SUM(CASE WHEN transaction_type = 'secondary' THEN total_amount_usdc ELSE 0 END)",
+        "denominator": "SUM(total_amount_usdc)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What percentage of volume is from secondary trading?",
+        "Secondary market share of volume",
+        "How much of trading is peer to peer?"
+      ],
+      "quality_notes": [
+        "Returns 0% on current data \u2014 all transactions are primary. Correct degenerate result."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "secondary trading share",
+        "p2p volume share",
+        "secondary volume",
+        "secondary trading",
+        "secondary market volume"
+      ]
+    },
+    {
+      "kpi_id": "failed_reversed_transactions",
+      "name": "Failed or Reversed Transactions",
+      "category": "marketplace",
+      "section": "A",
+      "status": "active",
+      "owner_team": "Operations / Risk",
+      "business_definition": "Count of failed or reversed transactions. Currently 0 \u2014 none generated in current data.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.transaction_id",
+        "transactions.status"
+      ],
       "required_joins": [],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "count_grouped",
-        "numerator": "COUNT(DISTINCT issuers.issuer_id)",
+        "numerator": "COUNT(CASE WHEN lower(status) IN ('failed', 'reversed') THEN 1 END)",
         "denominator": null,
-        "group_by": ["issuers.issuer_type"]
+        "group_by": []
       },
-      "example_questions": ["What is the distribution of athletes vs creators on ATHL?"],
-      "quality_notes": ["Assumes each issuer row represents one active issuer identity."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: issuer type distribution"],
+      "example_questions": [
+        "How many transactions failed or were reversed?",
+        "Failed transaction count",
+        "Reversed transaction rate"
+      ],
+      "quality_notes": [
+        "Returns 0 on current data \u2014 no failed/reversed transactions generated."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: A. Marketplace Health & Liquidity"
+      ],
       "missing_dependencies": [],
-      "aliases": ["issuer mix", "athlete creator split"]
+      "aliases": [
+        "failed transactions",
+        "reversed transactions",
+        "transaction failures",
+        "transaction error rate"
+      ]
     },
     {
-      "kpi_id": "profile_completion_rate_by_issuer_type",
-      "name": "Profile Completion Rate by Issuer Type",
-      "category": "onboarding",
+      "kpi_id": "net_new_users",
+      "name": "Net New Users",
+      "category": "growth",
+      "section": "B",
       "status": "active",
-      "tier": "tier_1",
-      "owner_team": "Segmentation / Customer Analytics",
-      "business_definition": "Percentage of issuers with profile completion above threshold, split by issuer type.",
-      "time_grains": ["all_time", "month", "week"],
-      "dimensions": ["issuer_type", "sport", "creator_category"],
-      "required_tables": ["issuers", "athlete_profile", "creator_profile"],
+      "owner_team": "Growth / Product",
+      "business_definition": "New registered users by time grain, using users.created_at.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain",
+        "country"
+      ],
+      "required_tables": [
+        "users"
+      ],
       "required_columns": [
-        "issuers.issuer_id",
-        "issuers.issuer_type",
-        "athlete_profile.profile_completion",
-        "creator_profile.profile_completion"
+        "users.user_id",
+        "users.created_at"
       ],
-      "required_joins": [
-        "issuers.issuer_id = athlete_profile.issuer_id",
-        "issuers.issuer_id = creator_profile.issuer_id"
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(users.user_id)",
+        "denominator": null,
+        "group_by": [
+          "DATE(users.created_at)"
+        ]
+      },
+      "example_questions": [
+        "How many new users signed up this week?",
+        "New user registrations per day",
+        "User acquisition this month",
+        "New signups by country"
       ],
-      "filters_defaults": ["completion_threshold = 80"],
+      "quality_notes": [
+        "Use users.created_at for signup date."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "new users",
+        "new signups",
+        "user acquisition",
+        "signups",
+        "registrations"
+      ]
+    },
+    {
+      "kpi_id": "total_registered_users",
+      "name": "Total Registered Users",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Growth / Product",
+      "business_definition": "Total count of all registered users.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "country",
+        "user_role"
+      ],
+      "required_tables": [
+        "users"
+      ],
+      "required_columns": [
+        "users.user_id"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(users.user_id)",
+        "denominator": null,
+        "group_by": []
+      },
+      "example_questions": [
+        "How many total registered users do we have?",
+        "Total user count",
+        "How many users are on the platform?"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "total users",
+        "user count",
+        "registered users"
+      ]
+    },
+    {
+      "kpi_id": "user_growth_rate",
+      "name": "User Growth Rate",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Growth / Product",
+      "business_definition": "Period-over-period growth in registered users.",
+      "time_grains": [
+        "week",
+        "month"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "users"
+      ],
+      "required_columns": [
+        "users.user_id",
+        "users.created_at"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH monthly AS (SELECT DATE_TRUNC('month', created_at) AS month, COUNT(user_id) AS new_users FROM users GROUP BY 1) SELECT month, new_users, LAG(new_users) OVER (ORDER BY month) AS prev_users, (new_users - LAG(new_users) OVER (ORDER BY month))::float / NULLIF(LAG(new_users) OVER (ORDER BY month), 0) AS growth_rate FROM monthly"
+      },
+      "example_questions": [
+        "What is the month over month user growth rate?",
+        "How fast is user base growing?",
+        "User growth rate this month vs last month"
+      ],
+      "quality_notes": [
+        "Use LAG window function for period-over-period comparison."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "user growth",
+        "growth rate",
+        "user acquisition rate",
+        "MoM user growth"
+      ]
+    },
+    {
+      "kpi_id": "active_traders",
+      "name": "Active Traders",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Distinct users who completed a transaction in the period (buyer_id only). MAT = month grain. seller_id excluded \u2014 equals issuer user_id on all primary sales.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.buyer_id",
+        "transactions.status",
+        "transactions.timestamp"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(DISTINCT transactions.buyer_id)",
+        "denominator": null,
+        "group_by": [
+          "DATE_TRUNC('month', transactions.timestamp)"
+        ]
+      },
+      "example_questions": [
+        "How many active traders did we have this month?",
+        "Monthly active traders",
+        "Distinct buyers this week",
+        "How many users traded this month?"
+      ],
+      "quality_notes": [
+        "Use buyer_id only. Including seller_id would inflate count since sellers = issuers on all primary sales.",
+        "Filter: lower(transactions.status) = 'completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "monthly active traders",
+        "MAT",
+        "active buyers",
+        "active trading users"
+      ]
+    },
+    {
+      "kpi_id": "active_sellers",
+      "name": "Active Sellers",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Distinct sellers in the period. In current data, sellers = issuers (all transactions are primary sales).",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.seller_id",
+        "transactions.status",
+        "transactions.timestamp"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(DISTINCT transactions.seller_id)",
+        "denominator": null,
+        "group_by": [
+          "DATE_TRUNC('month', transactions.timestamp)"
+        ]
+      },
+      "example_questions": [
+        "How many active sellers are there?",
+        "Distinct sellers this month",
+        "Number of issuers selling tokens"
+      ],
+      "quality_notes": [
+        "In current data, seller_id = issuer's user_id on every primary sale."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "active issuers selling",
+        "seller count",
+        "distinct sellers"
+      ]
+    },
+    {
+      "kpi_id": "buyer_to_seller_ratio",
+      "name": "Buyer to Seller Ratio",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Ratio of distinct active buyers to distinct active sellers in a period.",
+      "time_grains": [
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.buyer_id",
+        "transactions.seller_id",
+        "transactions.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(DISTINCT issuer_id with completion >= threshold)",
-        "denominator": "COUNT(DISTINCT issuer_id)",
-        "group_by": ["issuers.issuer_type"]
+        "numerator": "COUNT(DISTINCT transactions.buyer_id)",
+        "denominator": "COUNT(DISTINCT transactions.seller_id)",
+        "group_by": []
       },
-      "example_questions": ["What is profile completion rate for athletes vs creators?"],
-      "quality_notes": ["Use athlete profile completion for athletes and creator profile completion for creators."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: profile completion rate by issuer type"],
+      "example_questions": [
+        "What is the ratio of buyers to sellers?",
+        "How many buyers per seller?",
+        "Buyer seller ratio this month"
+      ],
+      "quality_notes": [
+        "Confounded until secondary trading \u2014 sellers are issuers in current data."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
       "missing_dependencies": [],
-      "aliases": ["issuer profile completion", "completion rate by type"]
+      "aliases": [
+        "buyers per seller",
+        "buyer seller ratio"
+      ]
     },
     {
-      "kpi_id": "id_verification_opt_in_rate",
-      "name": "ID Verification Opt-In Rate",
-      "category": "verification",
+      "kpi_id": "repeat_buyer_rate",
+      "name": "Repeat Buyer Rate",
+      "category": "growth",
+      "section": "B",
       "status": "active",
-      "tier": "tier_1",
-      "owner_team": "Security / Compliance",
-      "business_definition": "Share of issuers who opted into identity verification.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["issuer_type", "provider", "country"],
-      "required_tables": ["identity_verification", "issuers"],
-      "required_columns": ["identity_verification.issuer_id", "identity_verification.opted_in", "issuers.issuer_type"],
-      "required_joins": ["identity_verification.issuer_id = issuers.issuer_id"],
+      "owner_team": "Product / Analytics",
+      "business_definition": "Share of buyers who made more than one completed transaction.",
+      "time_grains": [
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.buyer_id",
+        "transactions.transaction_id",
+        "transactions.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH buyer_counts AS (SELECT buyer_id, COUNT(transaction_id) AS tx_count FROM transactions WHERE lower(status)='completed' GROUP BY buyer_id) SELECT COUNT(CASE WHEN tx_count > 1 THEN 1 END)::float / NULLIF(COUNT(*), 0) AS repeat_buyer_rate FROM buyer_counts"
+      },
+      "example_questions": [
+        "What percentage of buyers made more than one purchase?",
+        "Repeat buyer rate",
+        "How many buyers purchased more than once?"
+      ],
+      "quality_notes": [
+        "Requires subquery: GROUP BY buyer_id, HAVING COUNT > 1."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "repeat purchase rate",
+        "multi-purchase buyers",
+        "returning buyers",
+        "more than one purchase",
+        "buyers made more than one"
+      ]
+    },
+    {
+      "kpi_id": "multi_token_ownership_rate",
+      "name": "Multi-Token Ownership Rate",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Share of token holders who hold more than one distinct token.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [],
+      "required_tables": [
+        "user_token_wallet"
+      ],
+      "required_columns": [
+        "user_token_wallet.user_id",
+        "user_token_wallet.token_id",
+        "user_token_wallet.quantity"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "user_token_wallet.quantity > 0"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH holder_counts AS (SELECT user_id, COUNT(DISTINCT token_id) AS token_count FROM user_token_wallet WHERE quantity > 0 GROUP BY user_id) SELECT COUNT(CASE WHEN token_count > 1 THEN 1 END)::float / NULLIF(COUNT(*), 0) AS multi_token_rate FROM holder_counts"
+      },
+      "example_questions": [
+        "What share of users hold more than one token?",
+        "Multi-token ownership rate",
+        "How many users own multiple tokens?"
+      ],
+      "quality_notes": [
+        "Filter quantity > 0."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "portfolio diversification rate",
+        "multi token holders",
+        "users owning multiple tokens",
+        "hold more than one token",
+        "more than one token"
+      ]
+    },
+    {
+      "kpi_id": "average_wallet_balance",
+      "name": "Average Wallet Balance",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Average USDC wallet balance per user. usdc_balance is cost-basis, not mark-to-market.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "user_role"
+      ],
+      "required_tables": [
+        "user_wallet"
+      ],
+      "required_columns": [
+        "user_wallet.user_id",
+        "user_wallet.usdc_balance"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "average",
+        "numerator": "SUM(user_wallet.usdc_balance)",
+        "denominator": "COUNT(DISTINCT user_wallet.user_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the average wallet balance?",
+        "Average USDC balance per user",
+        "Mean wallet balance"
+      ],
+      "quality_notes": [
+        "usdc_balance is cost-basis, not mark-to-market value."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "avg wallet balance",
+        "mean balance",
+        "average balance"
+      ]
+    },
+    {
+      "kpi_id": "funded_wallet_rate",
+      "name": "Funded Wallet Rate",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "Share of wallets with a positive USDC balance.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [],
+      "required_tables": [
+        "user_wallet"
+      ],
+      "required_columns": [
+        "user_wallet.user_id",
+        "user_wallet.usdc_balance"
+      ],
+      "required_joins": [],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(DISTINCT issuer_id where opted_in = true)",
-        "denominator": "COUNT(DISTINCT issuer_id with verification record)",
-        "group_by": ["issuer_type"]
+        "numerator": "COUNT(CASE WHEN usdc_balance > 0 THEN 1 END)",
+        "denominator": "COUNT(user_id)",
+        "group_by": []
       },
-      "example_questions": ["What is the ID verification opt-in rate by issuer type?"],
-      "quality_notes": ["Issuer must have at least one identity verification record to be in denominator."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: ID Verification Opt-In Rate"],
+      "example_questions": [
+        "What share of wallets have a positive balance?",
+        "Funded wallet rate",
+        "How many users have funded their wallets?"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
       "missing_dependencies": [],
-      "aliases": ["kyc opt-in rate", "identity opt-in"]
+      "aliases": [
+        "wallet funding rate",
+        "wallets with balance",
+        "funded wallets",
+        "positive balance",
+        "wallets positive balance"
+      ]
+    },
+    {
+      "kpi_id": "mfa_adoption_rate",
+      "name": "MFA Adoption Rate",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Security / Product",
+      "business_definition": "Share of users with MFA enabled. Currently 0% \u2014 mfa_enabled = false for all rows in current data.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "user_role"
+      ],
+      "required_tables": [
+        "users"
+      ],
+      "required_columns": [
+        "users.user_id",
+        "users.mfa_enabled"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(CASE WHEN mfa_enabled = true THEN 1 END)",
+        "denominator": "COUNT(user_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the MFA adoption rate?",
+        "How many users have MFA enabled?",
+        "Share of users with two-factor authentication"
+      ],
+      "quality_notes": [
+        "Returns 0% on current data \u2014 mfa_enabled is false for all generated rows."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "2fa adoption",
+        "two factor adoption",
+        "mfa enabled rate"
+      ]
+    },
+    {
+      "kpi_id": "verified_email_rate",
+      "name": "Verified Email Rate",
+      "category": "growth",
+      "section": "B",
+      "status": "active",
+      "owner_team": "Product / Growth",
+      "business_definition": "Share of users with a verified email address.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "user_role",
+        "country"
+      ],
+      "required_tables": [
+        "users"
+      ],
+      "required_columns": [
+        "users.user_id",
+        "users.email_verified"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(CASE WHEN email_verified = true THEN 1 END)",
+        "denominator": "COUNT(user_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What percentage of users have verified their email?",
+        "Email verification rate",
+        "Share of users with verified email"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: B. User Growth & Engagement"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "email verified rate",
+        "email verification rate",
+        "verified users"
+      ]
+    },
+    {
+      "kpi_id": "total_issuers",
+      "name": "Total Issuers",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Growth / Issuer Success",
+      "business_definition": "Count of all issuers on the platform.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type",
+        "level",
+        "country"
+      ],
+      "required_tables": [
+        "issuers"
+      ],
+      "required_columns": [
+        "issuers.issuer_id"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(issuers.issuer_id)",
+        "denominator": null,
+        "group_by": []
+      },
+      "example_questions": [
+        "How many total issuers are on the platform?",
+        "Total issuer count",
+        "How many athletes and creators have signed up?"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "total issuer count",
+        "number of issuers",
+        "issuer total"
+      ]
+    },
+    {
+      "kpi_id": "verified_issuers",
+      "name": "Verified Issuers",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Trust & Safety",
+      "business_definition": "Count of issuers with status = 'PASSED' (fully verified).",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuers"
+      ],
+      "required_columns": [
+        "issuers.issuer_id",
+        "issuers.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "issuers.status = 'PASSED'"
+      ],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(issuers.issuer_id) FILTER (WHERE issuers.status = 'PASSED')",
+        "denominator": null,
+        "group_by": []
+      },
+      "example_questions": [
+        "How many issuers are fully verified?",
+        "Count of verified issuers",
+        "How many issuers have passed verification?"
+      ],
+      "quality_notes": [
+        "issuers.status real values are PASSED/PENDING/FAILED \u2014 not ACTIVE/SUSPENDED/ARCHIVED."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "verified issuer count",
+        "passed issuers",
+        "fully verified issuers"
+      ]
+    },
+    {
+      "kpi_id": "verification_pass_rate",
+      "name": "Verification Pass Rate",
+      "category": "trust",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Trust & Safety",
+      "business_definition": "Fully-verified issuers (status='PASSED') divided by all issuers. The single executive-level verification KPI.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuers"
+      ],
+      "required_columns": [
+        "issuers.issuer_id",
+        "issuers.status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(*) FILTER (WHERE issuers.status = 'PASSED')",
+        "denominator": "COUNT(*)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the issuer verification pass rate?",
+        "Share of verified issuers",
+        "What percentage of issuers are verified?",
+        "Overall verification rate"
+      ],
+      "quality_notes": [
+        "issuers.status real values are PASSED/PENDING/FAILED (not ACTIVE/SUSPENDED/ARCHIVED).",
+        "Distinct from id_verification_pass_rate and social_verification_pass_rate which are event-level metrics."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "verification pass rate",
+        "verified issuer rate",
+        "issuer verification rate",
+        "issuer pass rate"
+      ]
     },
     {
       "kpi_id": "id_verification_pass_rate",
       "name": "ID Verification Pass Rate",
-      "category": "verification",
+      "category": "trust",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
       "owner_team": "Security / Compliance",
-      "business_definition": "Share of completed identity checks that pass.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["provider", "level", "issuer_type"],
-      "required_tables": ["identity_verification", "issuers"],
+      "business_definition": "Share of completed identity checks that passed.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "provider",
+        "level",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "identity_verification",
+        "issuers"
+      ],
       "required_columns": [
         "identity_verification.identity_check_id",
         "identity_verification.status",
         "identity_verification.completed_at",
         "issuers.issuer_type"
       ],
-      "required_joins": ["identity_verification.issuer_id = issuers.issuer_id"],
-      "filters_defaults": ["completed_at is not null"],
+      "required_joins": [
+        "identity_verification.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [
+        "identity_verification.completed_at IS NOT NULL"
+      ],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(identity_check_id where status = 'PASSED')",
-        "denominator": "COUNT(identity_check_id where completed_at is not null)",
-        "group_by": ["provider", "level"]
+        "numerator": "COUNT(identity_check_id) FILTER (WHERE identity_verification.status = 'PASSED')",
+        "denominator": "COUNT(identity_check_id) FILTER (WHERE identity_verification.completed_at IS NOT NULL)",
+        "group_by": [
+          "provider",
+          "level"
+        ]
       },
-      "example_questions": ["What is our identity verification pass rate this month?"],
-      "quality_notes": ["Exclude checks with missing completion timestamp for pass-rate denominator."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: ID Verification Pass Rate"],
+      "example_questions": [
+        "What is the ID verification pass rate by provider?",
+        "Identity check pass rate this month",
+        "KYC pass rate"
+      ],
+      "quality_notes": [
+        "Denominator = completed checks only."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["kyc pass rate", "identity pass rate"]
+      "aliases": [
+        "kyc pass rate",
+        "identity pass rate",
+        "identity verification pass rate",
+        "ID verification pass rate",
+        "id verification pass rate"
+      ]
+    },
+    {
+      "kpi_id": "id_verification_opt_in_rate",
+      "name": "ID Verification Opt-In Rate",
+      "category": "trust",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Security / Compliance",
+      "business_definition": "Share of issuers who opted into identity verification.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type",
+        "provider",
+        "country"
+      ],
+      "required_tables": [
+        "identity_verification",
+        "issuers"
+      ],
+      "required_columns": [
+        "identity_verification.issuer_id",
+        "identity_verification.opted_in",
+        "issuers.issuer_type"
+      ],
+      "required_joins": [
+        "identity_verification.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(DISTINCT identity_verification.issuer_id) FILTER (WHERE identity_verification.opted_in = true)",
+        "denominator": "COUNT(DISTINCT identity_verification.issuer_id)",
+        "group_by": [
+          "issuers.issuer_type"
+        ]
+      },
+      "example_questions": [
+        "What is the ID verification opt-in rate?",
+        "How many issuers opted into KYC?",
+        "Identity verification opt-in rate"
+      ],
+      "quality_notes": [
+        "Denominator = issuers with at least one identity_verification record."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "kyc opt-in rate",
+        "identity opt-in rate",
+        "verification opt in"
+      ]
     },
     {
       "kpi_id": "id_verification_completion_rate",
-      "name": "Identity Verification Completion Rate",
-      "category": "verification",
+      "name": "ID Verification Completion Rate",
+      "category": "trust",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
       "owner_team": "Security / Compliance",
       "business_definition": "Share of initiated identity checks that reached completion.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["provider", "issuer_type"],
-      "required_tables": ["identity_verification", "issuers"],
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "provider",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "identity_verification",
+        "issuers"
+      ],
       "required_columns": [
         "identity_verification.identity_check_id",
         "identity_verification.initiated_at",
         "identity_verification.completed_at",
         "issuers.issuer_type"
       ],
-      "required_joins": ["identity_verification.issuer_id = issuers.issuer_id"],
-      "filters_defaults": ["initiated_at is not null"],
+      "required_joins": [
+        "identity_verification.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [
+        "identity_verification.initiated_at IS NOT NULL"
+      ],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(identity_check_id where completed_at is not null)",
-        "denominator": "COUNT(identity_check_id where initiated_at is not null)",
-        "group_by": ["provider", "issuer_type"]
+        "numerator": "COUNT(identity_check_id) FILTER (WHERE identity_verification.completed_at IS NOT NULL)",
+        "denominator": "COUNT(identity_check_id) FILTER (WHERE identity_verification.initiated_at IS NOT NULL)",
+        "group_by": [
+          "provider",
+          "issuers.issuer_type"
+        ]
       },
-      "example_questions": ["How many initiated identity checks get completed?"],
-      "quality_notes": ["Treat one identity_check_id as one attempt."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Identity Verification Completion Rate"],
+      "example_questions": [
+        "What is the identity verification completion rate?",
+        "How many initiated KYC checks were completed?",
+        "ID verification funnel completion"
+      ],
+      "quality_notes": [
+        "One identity_check_id = one attempt."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["kyc completion rate", "identity completion"]
+      "aliases": [
+        "kyc completion rate",
+        "identity completion rate",
+        "verification completion rate"
+      ]
     },
     {
       "kpi_id": "manual_review_rate",
       "name": "Manual Review Rate",
-      "category": "verification",
+      "category": "trust",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
       "owner_team": "Security / Operations",
-      "business_definition": "Share of identity verification checks that require manual review.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["provider", "issuer_type"],
-      "required_tables": ["identity_verification", "issuers"],
-      "required_columns": ["identity_verification.status", "identity_verification.identity_check_id", "issuers.issuer_type"],
-      "required_joins": ["identity_verification.issuer_id = issuers.issuer_id"],
+      "business_definition": "Share of identity verification checks that required manual review.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "provider",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "identity_verification",
+        "issuers"
+      ],
+      "required_columns": [
+        "identity_verification.identity_check_id",
+        "identity_verification.status",
+        "issuers.issuer_type"
+      ],
+      "required_joins": [
+        "identity_verification.issuer_id = issuers.issuer_id"
+      ],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(identity_check_id where status = 'MANUAL_REVIEW')",
+        "numerator": "COUNT(identity_check_id) FILTER (WHERE identity_verification.status = 'MANUAL_REVIEW')",
         "denominator": "COUNT(identity_check_id)",
-        "group_by": ["provider", "issuer_type"]
+        "group_by": [
+          "provider",
+          "issuers.issuer_type"
+        ]
       },
-      "example_questions": ["What percent of ID checks go to manual review?"],
-      "quality_notes": ["Status taxonomy must remain stable across providers."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Manual Review Rate"],
+      "example_questions": [
+        "What percent of ID checks go to manual review?",
+        "Manual review rate by provider",
+        "How often does identity verification require manual intervention?"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["manual kyc rate", "review rate"]
+      "aliases": [
+        "manual kyc rate",
+        "manual review rate",
+        "manual intervention rate"
+      ]
     },
     {
-      "kpi_id": "social_verification_success_rate",
-      "name": "Social Verification Success Rate",
-      "category": "verification",
+      "kpi_id": "social_verification_pass_rate",
+      "name": "Social Verification Pass Rate",
+      "category": "trust",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
       "owner_team": "Security / Compliance",
       "business_definition": "Successful social verifications divided by total social verification attempts.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["platform", "issuer_type"],
-      "required_tables": ["social_verification", "issuers"],
-      "required_columns": ["social_verification.platform", "social_verification.status", "social_verification.social_verif_id", "issuers.issuer_type"],
-      "required_joins": ["social_verification.issuer_id = issuers.issuer_id"],
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "platform",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "social_verification",
+        "issuers"
+      ],
+      "required_columns": [
+        "social_verification.social_verif_id",
+        "social_verification.status",
+        "social_verification.platform",
+        "issuers.issuer_type"
+      ],
+      "required_joins": [
+        "social_verification.issuer_id = issuers.issuer_id"
+      ],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(social_verif_id where status = 'SUCCESS')",
+        "numerator": "COUNT(social_verif_id) FILTER (WHERE social_verification.status = 'SUCCESS')",
         "denominator": "COUNT(social_verif_id)",
-        "group_by": ["platform", "issuer_type"]
+        "group_by": [
+          "social_verification.platform",
+          "issuers.issuer_type"
+        ]
       },
-      "example_questions": ["What is social verification success rate by platform?"],
-      "quality_notes": ["Success state naming should stay aligned with verification service mapping."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: OAuth Success Rate by Platform"],
+      "example_questions": [
+        "What is the social verification pass rate?",
+        "Social verification success rate by platform",
+        "OAuth verification pass rate"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["oauth success rate", "social verification completion"]
+      "aliases": [
+        "oauth success rate",
+        "social verification success rate",
+        "social verif pass rate",
+        "social verification pass rate"
+      ]
     },
     {
       "kpi_id": "social_verification_retry_rate",
       "name": "Social Verification Retry Rate",
-      "category": "verification",
+      "category": "trust",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
       "owner_team": "Product / Security",
       "business_definition": "Average number of attempts per social verification flow.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["platform", "issuer_type"],
-      "required_tables": ["social_verification", "issuers"],
-      "required_columns": ["social_verification.platform", "social_verification.attempts", "issuers.issuer_type"],
-      "required_joins": ["social_verification.issuer_id = issuers.issuer_id"],
-      "filters_defaults": ["attempts is not null"],
-      "sql_recipe": {
-        "pattern": "average",
-        "numerator": "SUM(attempts)",
-        "denominator": "COUNT(social_verif_id)",
-        "group_by": ["platform", "issuer_type"]
-      },
-      "example_questions": ["How many retries do users need for social verification by platform?"],
-      "quality_notes": ["Interpret attempts as count of tries in one verification flow."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Retry Rate per Platform"],
-      "missing_dependencies": [],
-      "aliases": ["oauth retry rate", "social retry"]
-    },
-    {
-      "kpi_id": "amount_raised_vs_target",
-      "name": "Amount Raised vs Target",
-      "category": "finance",
-      "status": "active",
-      "tier": "tier_1",
-      "owner_team": "Finance / Revenue",
-      "business_definition": "Total raised amount compared to issuer raise target.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["issuer_type", "sport", "creator_category"],
-      "required_tables": ["transactions", "tokens", "issuer_preferences", "issuers"],
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "platform",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "social_verification",
+        "issuers"
+      ],
       "required_columns": [
-        "transactions.total_amount_usdc",
-        "transactions.token_id",
-        "tokens.token_id",
-        "tokens.issuer_id",
-        "issuer_preferences.issuer_id",
-        "issuer_preferences.raise_target_usd",
+        "social_verification.social_verif_id",
+        "social_verification.attempts",
+        "social_verification.platform",
         "issuers.issuer_type"
       ],
       "required_joins": [
-        "transactions.token_id = tokens.token_id",
-        "tokens.issuer_id = issuer_preferences.issuer_id",
+        "social_verification.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [
+        "social_verification.attempts IS NOT NULL"
+      ],
+      "sql_recipe": {
+        "pattern": "average",
+        "numerator": "SUM(social_verification.attempts)",
+        "denominator": "COUNT(social_verification.social_verif_id)",
+        "group_by": [
+          "social_verification.platform",
+          "issuers.issuer_type"
+        ]
+      },
+      "example_questions": [
+        "How many retries do issuers need for social verification?",
+        "Average social verification attempts by platform",
+        "Social verification retry rate"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "oauth retry rate",
+        "social retry rate",
+        "verification retry rate"
+      ]
+    },
+    {
+      "kpi_id": "issuer_activation_rate",
+      "name": "Issuer Activation Rate",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Issuer Success",
+      "business_definition": "Issuers with a live token and at least one completed sale divided by all issuers. Old waitlist definition is retired.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuers",
+        "tokens",
+        "transactions"
+      ],
+      "required_columns": [
+        "issuers.issuer_id",
+        "tokens.issuer_id",
+        "tokens.token_id",
+        "transactions.token_id",
+        "transactions.status"
+      ],
+      "required_joins": [
+        "tokens.issuer_id = issuers.issuer_id",
+        "transactions.token_id = tokens.token_id"
+      ],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH active_issuers AS (SELECT DISTINCT i.issuer_id FROM issuers i JOIN tokens tk ON i.issuer_id = tk.issuer_id JOIN transactions tx ON tk.token_id = tx.token_id WHERE lower(tx.status)='completed') SELECT COUNT(ai.issuer_id)::float / NULLIF(COUNT(i.issuer_id), 0) AS activation_rate FROM issuers i LEFT JOIN active_issuers ai ON i.issuer_id = ai.issuer_id"
+      },
+      "example_questions": [
+        "What share of issuers have made at least one sale?",
+        "Issuer activation rate",
+        "How many issuers have active tokens with sales?"
+      ],
+      "quality_notes": [
+        "Definition: issuer has at least one token with at least one completed transaction. Old waitlist definition is retired."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "issuer activation",
+        "active issuer rate",
+        "issuers with sales",
+        "at least one sale",
+        "made at least one sale"
+      ]
+    },
+    {
+      "kpi_id": "token_launch_success_rate",
+      "name": "Token Launch Success Rate",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Issuer Success",
+      "business_definition": "Issuers with a live token (paused_sales = false) divided by issuers who created any token record.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuers",
+        "tokens"
+      ],
+      "required_columns": [
+        "issuers.issuer_id",
+        "tokens.issuer_id",
+        "tokens.token_id",
+        "tokens.paused_sales"
+      ],
+      "required_joins": [
         "tokens.issuer_id = issuers.issuer_id"
       ],
       "filters_defaults": [],
       "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "SUM(transactions.total_amount_usdc)",
-        "denominator": "MAX(issuer_preferences.raise_target_usd) per issuer",
-        "group_by": ["tokens.issuer_id"]
+        "pattern": "raw_sql",
+        "raw_sql": "WITH issuer_tokens AS (SELECT issuer_id, bool_or(paused_sales = false) AS has_live_token FROM tokens GROUP BY issuer_id) SELECT COUNT(CASE WHEN it.has_live_token THEN 1 END)::float / NULLIF(COUNT(i.issuer_id), 0) AS launch_success_rate FROM issuers i LEFT JOIN issuer_tokens it ON i.issuer_id = it.issuer_id WHERE it.issuer_id IS NOT NULL"
       },
-      "example_questions": ["How much has each issuer raised versus target?"],
-      "quality_notes": ["Target may be null for some issuers and must be excluded or flagged."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Amount raised vs. target"],
-      "missing_dependencies": [],
-      "aliases": ["raise progress", "funding progress"]
-    },
-    {
-      "kpi_id": "percent_supply_sold_30d",
-      "name": "Percent Supply Sold (30d)",
-      "category": "trading",
-      "status": "active",
-      "tier": "tier_1",
-      "owner_team": "Finance / Revenue",
-      "business_definition": "Tokens sold divided by initial supply in the first 30 days after mint timestamp.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["token_id", "issuer_type", "token_symbol"],
-      "required_tables": ["tokens", "transactions"],
-      "required_columns": [
-        "tokens.token_id",
-        "tokens.initial_supply",
-        "tokens.mint_timestamp",
-        "transactions.token_id",
-        "transactions.quantity",
-        "transactions.timestamp"
+      "example_questions": [
+        "What is the token launch success rate?",
+        "How many issuers successfully launched a token?",
+        "Token launch rate by issuer type"
       ],
-      "required_joins": ["tokens.token_id = transactions.token_id"],
-      "filters_defaults": ["transactions.timestamp between mint_timestamp and mint_timestamp + interval 30 day"],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "SUM(transactions.quantity in first 30 days)",
-        "denominator": "tokens.initial_supply",
-        "group_by": ["tokens.token_id"]
-      },
-      "example_questions": ["What percent of supply was sold in the first 30 days by token?"],
-      "quality_notes": ["Use consistent timezone handling between mint and transaction timestamps."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: % supply sold (30 d)"],
+      "quality_notes": [
+        "Denominator: issuers with at least one token record. Numerator: those with paused_sales=false."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["30 day supply sold", "early supply conversion"]
+      "aliases": [
+        "launch success rate",
+        "token launch rate",
+        "successful token launches"
+      ]
     },
     {
-      "kpi_id": "issuer_daily_revenue",
-      "name": "Issuer Daily Revenue",
+      "kpi_id": "issuer_revenue",
+      "name": "Issuer Revenue",
       "category": "finance",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
+      "value_basis": "issuer_net",
       "owner_team": "Finance / Revenue",
-      "business_definition": "Daily total revenue amount per issuer.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["issuer_id", "date"],
-      "required_tables": ["issuer_daily_revenue"],
-      "required_columns": ["issuer_daily_revenue.issuer_id", "issuer_daily_revenue.date", "issuer_daily_revenue.total_amount_usdc"],
+      "business_definition": "Revenue per issuer, net of the platform take (~80% of gross). Source: issuer_daily_revenue.total_amount_usdc. FK issuer_daily_revenue.issuer_id -> issuers.issuer_id is clean.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_id",
+        "date"
+      ],
+      "required_tables": [
+        "issuer_daily_revenue"
+      ],
+      "required_columns": [
+        "issuer_daily_revenue.issuer_id",
+        "issuer_daily_revenue.total_amount_usdc",
+        "issuer_daily_revenue.date"
+      ],
       "required_joins": [],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "sum_grouped",
         "numerator": "SUM(issuer_daily_revenue.total_amount_usdc)",
         "denominator": null,
-        "group_by": ["issuer_daily_revenue.issuer_id", "issuer_daily_revenue.date"]
+        "group_by": [
+          "issuer_daily_revenue.issuer_id",
+          "issuer_daily_revenue.date"
+        ]
       },
-      "example_questions": ["Show daily revenue trend for each issuer."],
-      "quality_notes": ["Revenue table should be treated as curated source for daily totals."],
-      "source_refs": ["ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf: Revenue and Sales Summary"],
+      "example_questions": [
+        "How much did each issuer earn?",
+        "Issuer revenue this month",
+        "Per-issuer earnings",
+        "Creator revenue breakdown",
+        "Athlete earnings"
+      ],
+      "quality_notes": [
+        "issuer_daily_revenue.total_amount_usdc is net (~80% of gross). Not the same as gross token revenue.",
+        "FK: issuer_daily_revenue.issuer_id -> issuers.issuer_id (clean join, no trap)."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["daily issuer revenue", "issuer revenue trend"]
+      "aliases": [
+        "issuer earnings",
+        "per-issuer revenue",
+        "creator revenue",
+        "athlete revenue",
+        "issuer net revenue",
+        "issuer earn",
+        "each issuer earn"
+      ]
     },
     {
-      "kpi_id": "token_leaderboard_most_traded",
-      "name": "Token Leaderboard Most Traded",
-      "category": "leaderboard",
+      "kpi_id": "average_revenue_per_issuer",
+      "name": "Average Revenue Per Issuer",
+      "category": "finance",
+      "section": "C",
       "status": "active",
-      "tier": "tier_1",
-      "owner_team": "Product / Operations",
-      "business_definition": "Ranking of tokens by trade volume or transaction count in a selected time window.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["token_id", "issuer_type", "time_window"],
-      "required_tables": ["transactions", "tokens", "issuers"],
+      "value_basis": "issuer_net",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Mean issuer net revenue across all issuers.",
+      "time_grains": [
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuer_daily_revenue"
+      ],
       "required_columns": [
-        "transactions.token_id",
-        "transactions.total_amount_usdc",
-        "transactions.transaction_id",
-        "transactions.timestamp",
-        "tokens.token_id",
-        "tokens.token_symbol",
-        "tokens.issuer_id",
+        "issuer_daily_revenue.issuer_id",
+        "issuer_daily_revenue.total_amount_usdc"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH per_issuer AS (SELECT issuer_id, SUM(total_amount_usdc) AS rev FROM issuer_daily_revenue GROUP BY issuer_id) SELECT AVG(rev) AS avg_revenue_per_issuer FROM per_issuer"
+      },
+      "example_questions": [
+        "What is the average revenue per issuer?",
+        "Average earnings per athlete",
+        "Mean issuer revenue this month"
+      ],
+      "quality_notes": [
+        "Two-stage aggregation: sum per issuer, then average across issuers."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "avg revenue per issuer",
+        "ARPI",
+        "mean issuer revenue",
+        "average issuer earnings",
+        "average revenue per issuer"
+      ]
+    },
+    {
+      "kpi_id": "top_issuer_revenue_share",
+      "name": "Top Issuer Revenue Share",
+      "category": "finance",
+      "section": "C",
+      "status": "active",
+      "value_basis": "issuer_net",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Share of total issuer net revenue held by the top-N issuers.",
+      "time_grains": [
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuer_daily_revenue"
+      ],
+      "required_columns": [
+        "issuer_daily_revenue.issuer_id",
+        "issuer_daily_revenue.total_amount_usdc"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH issuer_rev AS (SELECT issuer_id, SUM(total_amount_usdc) AS rev FROM issuer_daily_revenue GROUP BY issuer_id), total AS (SELECT SUM(rev) AS grand_total FROM issuer_rev) SELECT i.issuer_id, i.rev, i.rev / NULLIF(t.grand_total, 0) AS revenue_share FROM issuer_rev i CROSS JOIN total t ORDER BY i.rev DESC LIMIT 10"
+      },
+      "example_questions": [
+        "What share of revenue do the top 10 issuers generate?",
+        "Revenue concentration among top issuers",
+        "Top issuer revenue share"
+      ],
+      "quality_notes": [
+        "issuer_daily_revenue is net (80%)."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "top issuer share",
+        "issuer revenue concentration",
+        "top earners share"
+      ]
+    },
+    {
+      "kpi_id": "issuer_revenue_growth",
+      "name": "Issuer Revenue Growth",
+      "category": "finance",
+      "section": "C",
+      "status": "active",
+      "value_basis": "issuer_net",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Period-over-period growth in issuer net revenue.",
+      "time_grains": [
+        "month",
+        "week"
+      ],
+      "dimensions": [
+        "issuer_id"
+      ],
+      "required_tables": [
+        "issuer_daily_revenue"
+      ],
+      "required_columns": [
+        "issuer_daily_revenue.issuer_id",
+        "issuer_daily_revenue.total_amount_usdc",
+        "issuer_daily_revenue.date"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH monthly AS (SELECT issuer_id, DATE_TRUNC('month', date) AS month, SUM(total_amount_usdc) AS rev FROM issuer_daily_revenue GROUP BY 1, 2) SELECT issuer_id, month, rev, LAG(rev) OVER (PARTITION BY issuer_id ORDER BY month) AS prev_rev, (rev - LAG(rev) OVER (PARTITION BY issuer_id ORDER BY month)) / NULLIF(LAG(rev) OVER (PARTITION BY issuer_id ORDER BY month), 0) AS growth_rate FROM monthly"
+      },
+      "example_questions": [
+        "What is the month over month issuer revenue growth?",
+        "Issuer revenue growth rate",
+        "Which issuers are growing fastest?"
+      ],
+      "quality_notes": [
+        "Use LAG window function partitioned by issuer_id."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "issuer revenue trend",
+        "issuer earnings growth",
+        "creator revenue growth",
+        "issuer revenue trending",
+        "issuer revenue growth"
+      ]
+    },
+    {
+      "kpi_id": "issuers_with_zero_revenue",
+      "name": "Zero Revenue Issuers",
+      "category": "finance",
+      "section": "C",
+      "status": "active",
+      "value_basis": "issuer_net",
+      "owner_team": "Issuer Success",
+      "business_definition": "Count and share of issuers with no revenue in issuer_daily_revenue.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuers",
+        "issuer_daily_revenue"
+      ],
+      "required_columns": [
+        "issuers.issuer_id",
+        "issuers.issuer_type",
+        "issuer_daily_revenue.issuer_id",
+        "issuer_daily_revenue.total_amount_usdc"
+      ],
+      "required_joins": [],
+      "multi_table_rationale": "Anti-join: issuers LEFT JOIN issuer_daily_revenue to find issuers with no revenue records.",
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "SELECT COUNT(DISTINCT i.issuer_id) AS zero_revenue_issuers FROM issuers i LEFT JOIN issuer_daily_revenue r ON i.issuer_id = r.issuer_id WHERE r.issuer_id IS NULL OR r.total_amount_usdc = 0"
+      },
+      "example_questions": [
+        "How many issuers have made zero revenue?",
+        "Issuers with no earnings",
+        "Count of issuers with no sales"
+      ],
+      "quality_notes": [
+        "Anti-join pattern on issuer_daily_revenue."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "zero revenue issuers",
+        "issuers without revenue",
+        "non-earning issuers",
+        "zero revenue"
+      ]
+    },
+    {
+      "kpi_id": "athlete_vs_creator_split",
+      "name": "Athlete vs Creator Split",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Segmentation / Analytics",
+      "business_definition": "Distribution of issuers by issuer_type (athlete vs creator).",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type",
+        "level"
+      ],
+      "required_tables": [
+        "issuers"
+      ],
+      "required_columns": [
+        "issuers.issuer_id",
+        "issuers.issuer_type",
+        "issuers.level"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(DISTINCT issuers.issuer_id)",
+        "denominator": null,
+        "group_by": [
+          "issuers.issuer_type"
+        ]
+      },
+      "example_questions": [
+        "What is the split between athletes and creators?",
+        "How many athletes vs creators are on the platform?",
+        "Issuer type distribution"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "athlete creator split",
+        "issuer type split",
+        "athlete vs creator",
+        "issuer mix"
+      ]
+    },
+    {
+      "kpi_id": "social_reach_verified_issuers",
+      "name": "Social Reach of Verified Issuers",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Growth / Issuer Success",
+      "business_definition": "Aggregate follower count across verified social accounts of issuers.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "platform",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "social_verification",
+        "issuers"
+      ],
+      "required_columns": [
+        "social_verification.issuer_id",
+        "social_verification.status",
+        "social_verification.followers_count",
+        "social_verification.platform",
         "issuers.issuer_type"
       ],
       "required_joins": [
-        "transactions.token_id = tokens.token_id",
-        "tokens.issuer_id = issuers.issuer_id"
+        "social_verification.issuer_id = issuers.issuer_id"
       ],
-      "filters_defaults": ["time_window default = 7 days"],
-      "sql_recipe": {
-        "pattern": "ranked_aggregate",
-        "numerator": "SUM(transactions.total_amount_usdc) or COUNT(transactions.transaction_id)",
-        "denominator": null,
-        "group_by": ["transactions.token_id"],
-        "ranking": "ORDER BY metric DESC"
-      },
-      "example_questions": ["What are the most traded tokens in the last 7 days?"],
-      "quality_notes": ["Choose one canonical leaderboard metric per dashboard to avoid ambiguity."],
-      "source_refs": ["ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf: Most traded tokens"],
-      "missing_dependencies": [],
-      "aliases": ["most traded tokens", "token trading leaderboard"]
-    },
-    {
-      "kpi_id": "total_platform_revenue",
-      "name": "Total Platform Revenue",
-      "category": "finance",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Finance / Revenue",
-      "business_definition": "Total completed transaction revenue across the platform.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["time_grain"],
-      "required_tables": ["transactions"],
-      "required_columns": ["transactions.total_amount_usdc", "transactions.status", "transactions.timestamp"],
-      "required_joins": [],
-      "filters_defaults": ["status = 'completed' when available"],
+      "filters_defaults": [
+        "social_verification.status = 'SUCCESS'"
+      ],
       "sql_recipe": {
         "pattern": "sum_grouped",
-        "numerator": "SUM(transactions.total_amount_usdc)",
+        "numerator": "SUM(social_verification.followers_count)",
         "denominator": null,
-        "group_by": ["DATE(transactions.timestamp)"]
+        "group_by": [
+          "social_verification.platform",
+          "issuers.issuer_type"
+        ]
       },
-      "example_questions": ["What is total platform revenue by day this month?"],
-      "quality_notes": ["Status values should be normalized if historical records vary."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"],
+      "example_questions": [
+        "What is the total social reach of verified issuers?",
+        "Combined follower count of verified athletes",
+        "Social reach by platform"
+      ],
+      "quality_notes": [
+        "Filter: social_verification.status = 'SUCCESS'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
       "missing_dependencies": [],
-      "aliases": ["platform revenue", "gross platform revenue"]
+      "aliases": [
+        "social reach",
+        "verified issuer reach",
+        "total followers",
+        "follower reach"
+      ]
     },
     {
-      "kpi_id": "active_trading_users",
-      "name": "Active Trading Users",
-      "category": "trading",
+      "kpi_id": "profile_completion_rate_by_issuer_type",
+      "name": "Profile Completion Rate by Issuer Type",
+      "category": "issuer",
+      "section": "C",
       "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Growth / Analytics",
-      "business_definition": "Distinct users who executed at least one buy transaction in the window.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["time_grain"],
-      "required_tables": ["transactions"],
-      "required_columns": ["transactions.buyer_id", "transactions.timestamp"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "count_distinct",
-        "numerator": "COUNT(DISTINCT transactions.buyer_id)",
-        "denominator": null,
-        "group_by": ["DATE(transactions.timestamp)"]
-      },
-      "example_questions": ["How many active trading users did we have this week?"],
-      "quality_notes": ["Buyer-based definition aligns with current primary-market implementation."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["trading actives", "active buyers"]
-    },
-    {
-      "kpi_id": "participation_rate",
-      "name": "Participation Rate",
-      "category": "trading",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Growth / Analytics",
-      "business_definition": "Share of users participating in trading activity.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["time_grain"],
-      "required_tables": ["transactions", "users"],
-      "required_columns": ["transactions.buyer_id", "transactions.timestamp", "users.user_id"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "COUNT(DISTINCT transactions.buyer_id)",
-        "denominator": "COUNT(DISTINCT users.user_id)",
-        "group_by": ["DATE(transactions.timestamp)"]
-      },
-      "example_questions": ["What is our trading participation rate this month?"],
-      "quality_notes": ["Population denominator can be constrained to active accounts when needed."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["trading participation", "user participation rate"]
-    },
-    {
-      "kpi_id": "average_transaction_size_usdc",
-      "name": "Average Transaction Size (USDC)",
-      "category": "trading",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Finance / Revenue",
-      "business_definition": "Average USDC notional per transaction.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["time_grain"],
-      "required_tables": ["transactions"],
-      "required_columns": ["transactions.total_amount_usdc", "transactions.timestamp"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "average",
-        "numerator": "SUM(transactions.total_amount_usdc)",
-        "denominator": "COUNT(transactions.transaction_id)",
-        "group_by": ["DATE(transactions.timestamp)"]
-      },
-      "example_questions": ["What is the average transaction size by week?"],
-      "quality_notes": ["Monitor outliers and reversals for reporting variants."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["avg trade size", "average order value usdc"]
-    },
-    {
-      "kpi_id": "average_tokens_per_transaction",
-      "name": "Average Tokens per Transaction",
-      "category": "trading",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Product / Analytics",
-      "business_definition": "Average token quantity purchased per transaction.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["time_grain"],
-      "required_tables": ["transactions"],
-      "required_columns": ["transactions.quantity", "transactions.transaction_id", "transactions.timestamp"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "average",
-        "numerator": "SUM(transactions.quantity)",
-        "denominator": "COUNT(transactions.transaction_id)",
-        "group_by": ["DATE(transactions.timestamp)"]
-      },
-      "example_questions": ["How many tokens are bought on average per transaction?"],
-      "quality_notes": ["Quantity precision and splits should remain consistent across sources."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Platform Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["avg tokens per trade", "average token quantity per transaction"]
-    },
-    {
-      "kpi_id": "tokens_issued_count",
-      "name": "Tokens Issued (Count)",
-      "category": "finance",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Product / Operations",
-      "business_definition": "Count of tokens issued per issuer.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["issuer_id"],
-      "required_tables": ["tokens"],
-      "required_columns": ["tokens.token_id", "tokens.issuer_id", "tokens.created_at"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "count_grouped",
-        "numerator": "COUNT(tokens.token_id)",
-        "denominator": null,
-        "group_by": ["tokens.issuer_id"]
-      },
-      "example_questions": ["How many tokens has each issuer created?"],
-      "quality_notes": ["Token archival policy may affect historical totals."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["issuer token count", "number of tokens issued"]
-    },
-    {
-      "kpi_id": "total_supply_issued",
-      "name": "Total Supply Issued",
-      "category": "finance",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Finance / Revenue",
-      "business_definition": "Total initial token supply issued by issuer.",
-      "time_grains": ["all_time", "month", "week", "day"],
-      "dimensions": ["issuer_id", "token_symbol"],
-      "required_tables": ["tokens"],
-      "required_columns": ["tokens.issuer_id", "tokens.initial_supply", "tokens.token_symbol", "tokens.created_at"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "sum_grouped",
-        "numerator": "SUM(tokens.initial_supply)",
-        "denominator": null,
-        "group_by": ["tokens.issuer_id"]
-      },
-      "example_questions": ["What total supply has each issuer launched?"],
-      "quality_notes": ["Initial supply is used rather than mutable current supply values."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["issued supply", "total initial supply"]
-    },
-    {
-      "kpi_id": "token_number_of_buyers",
-      "name": "Number of Buyers per Token",
-      "category": "trading",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Product / Analytics",
-      "business_definition": "Distinct count of buyers per token.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["token_id", "token_symbol"],
-      "required_tables": ["transactions", "tokens"],
-      "required_columns": ["transactions.buyer_id", "transactions.token_id", "transactions.timestamp", "tokens.token_symbol"],
-      "required_joins": ["transactions.token_id = tokens.token_id"],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "count_distinct_grouped",
-        "numerator": "COUNT(DISTINCT transactions.buyer_id)",
-        "denominator": null,
-        "group_by": ["transactions.token_id"]
-      },
-      "example_questions": ["Which tokens have the highest number of buyers this month?"],
-      "quality_notes": ["Buyer uniqueness should use canonical user IDs across all sources."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Token Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["buyers per token", "distinct token buyers"]
-    },
-    {
-      "kpi_id": "average_selling_price",
-      "name": "Average Selling Price",
-      "category": "finance",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Finance / Revenue",
-      "business_definition": "Average realized price across sold token quantity.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["token_id", "issuer_id"],
-      "required_tables": ["transactions", "tokens"],
-      "required_columns": ["transactions.total_amount_usdc", "transactions.quantity", "transactions.token_id", "transactions.timestamp", "tokens.issuer_id"],
-      "required_joins": ["transactions.token_id = tokens.token_id"],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "SUM(transactions.total_amount_usdc)",
-        "denominator": "SUM(transactions.quantity)",
-        "group_by": ["transactions.token_id"]
-      },
-      "example_questions": ["What is average selling price by token?"],
-      "quality_notes": ["Use weighted average over quantity, not simple average of per-trade prices."],
-      "source_refs": ["docs/database_schema_taxonomy.md: Issuer Metrics", "docs/database_schema_taxonomy.md: Token Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["asp", "average token selling price"]
-    },
-    {
-      "kpi_id": "total_purchases_by_user",
-      "name": "Total Purchases by User",
-      "category": "finance",
-      "status": "active",
-      "tier": "tier_2",
-      "owner_team": "Growth / Analytics",
-      "business_definition": "Total purchase value attributed to each buyer.",
-      "time_grains": ["day", "week", "month", "all_time"],
-      "dimensions": ["buyer_id"],
-      "required_tables": ["transactions"],
-      "required_columns": ["transactions.buyer_id", "transactions.total_amount_usdc", "transactions.timestamp"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "sum_grouped",
-        "numerator": "SUM(transactions.total_amount_usdc)",
-        "denominator": null,
-        "group_by": ["transactions.buyer_id"]
-      },
-      "example_questions": ["How much has each user purchased in total?"],
-      "quality_notes": ["Can be filtered to completed transactions for financial reporting parity."],
-      "source_refs": ["docs/database_schema_taxonomy.md: User Metrics"],
-      "missing_dependencies": [],
-      "aliases": ["user purchase total", "buyer lifetime purchases"]
-    },
-    {
-      "kpi_id": "login_attempt_volume",
-      "name": "Login Attempt Volume",
-      "category": "security",
-      "status": "blocked_by_missing_data",
-      "tier": "tier_1",
-      "owner_team": "Security / Operations",
-      "business_definition": "Total number of login attempts per day.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["platform", "country"],
-      "required_tables": ["auth_login_events"],
-      "required_columns": ["auth_login_events.user_id", "auth_login_events.attempted_at", "auth_login_events.result"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "count_grouped",
-        "numerator": "COUNT(*)",
-        "denominator": null,
-        "group_by": ["DATE(attempted_at)"]
-      },
-      "example_questions": ["How many login attempts did we have each day this week?"],
-      "quality_notes": ["Needs unified login event tracking across clients."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Login Attempt Volume"],
-      "missing_dependencies": ["auth_login_events table"],
-      "aliases": ["daily login attempts", "login volume"]
-    },
-    {
-      "kpi_id": "session_timeout_rate",
-      "name": "Session Timeout Rate",
-      "category": "security",
-      "status": "blocked_by_missing_data",
-      "tier": "tier_1",
-      "owner_team": "Product / Operations",
-      "business_definition": "Share of sessions ending due to timeout over all ended sessions.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["platform"],
-      "required_tables": ["auth_session_events"],
-      "required_columns": ["auth_session_events.session_id", "auth_session_events.end_reason", "auth_session_events.ended_at"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "COUNT(session_id where end_reason = 'TIMEOUT')",
-        "denominator": "COUNT(session_id)",
-        "group_by": ["DATE(ended_at)"]
-      },
-      "example_questions": ["What percent of sessions end due to timeout?"],
-      "quality_notes": ["Requires consistent end_reason taxonomy."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Session Timeout Rate"],
-      "missing_dependencies": ["auth_session_events table"],
-      "aliases": ["timeout session rate", "inactivity timeout rate"]
-    },
-    {
-      "kpi_id": "mfa_success_rate",
-      "name": "MFA Success Rate",
-      "category": "security",
-      "status": "blocked_by_missing_data",
-      "tier": "tier_1",
-      "owner_team": "Security / Operations",
-      "business_definition": "Share of MFA challenges completed successfully.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["challenge_type"],
-      "required_tables": ["mfa_challenge_events"],
-      "required_columns": ["mfa_challenge_events.challenge_id", "mfa_challenge_events.result", "mfa_challenge_events.created_at"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "COUNT(challenge_id where result = 'SUCCESS')",
-        "denominator": "COUNT(challenge_id)",
-        "group_by": ["DATE(created_at)"]
-      },
-      "example_questions": ["What is MFA success rate over the past 30 days?"],
-      "quality_notes": ["Needs dedicated MFA events, not just users.mfa_enabled flag."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: MFA Success Rate"],
-      "missing_dependencies": ["mfa_challenge_events table"],
-      "aliases": ["mfa pass rate", "mfa completion rate"]
-    },
-    {
-      "kpi_id": "anomaly_detection_rate",
-      "name": "Anomaly Detection Rate",
-      "category": "security",
-      "status": "blocked_by_missing_data",
-      "tier": "tier_1",
-      "owner_team": "Trust and Safety",
-      "business_definition": "Rate of login or transaction events flagged as anomalous.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["anomaly_type", "platform"],
-      "required_tables": ["risk_anomaly_events"],
-      "required_columns": ["risk_anomaly_events.event_id", "risk_anomaly_events.flagged", "risk_anomaly_events.detected_at"],
-      "required_joins": [],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "COUNT(event_id where flagged = true)",
-        "denominator": "COUNT(event_id)",
-        "group_by": ["DATE(detected_at)"]
-      },
-      "example_questions": ["How often are user actions flagged as anomalous?"],
-      "quality_notes": ["Requires risk scoring output persisted as events."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Anomaly Detection Rate"],
-      "missing_dependencies": ["risk_anomaly_events table"],
-      "aliases": ["anomaly flag rate", "risk anomaly rate"]
-    },
-    {
-      "kpi_id": "support_contact_rate",
-      "name": "Support Contact Rate",
-      "category": "security",
-      "status": "blocked_by_missing_data",
-      "tier": "tier_1",
-      "owner_team": "Support Operations",
-      "business_definition": "Share of active users who contact support in a period.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["contact_reason", "user_role"],
-      "required_tables": ["support_contacts", "users"],
-      "required_columns": ["support_contacts.user_id", "support_contacts.created_at", "support_contacts.reason", "users.user_id"],
-      "required_joins": ["support_contacts.user_id = users.user_id"],
-      "filters_defaults": [],
-      "sql_recipe": {
-        "pattern": "ratio",
-        "numerator": "COUNT(DISTINCT support_contacts.user_id)",
-        "denominator": "COUNT(DISTINCT active users in period)",
-        "group_by": ["DATE(support_contacts.created_at)"]
-      },
-      "example_questions": ["What percentage of users contact support monthly?"],
-      "quality_notes": ["Needs normalized support event source."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Support Contact Rate"],
-      "missing_dependencies": ["support_contacts table"],
-      "aliases": ["support reachout rate", "support ticket rate"]
-    },
-    {
-      "kpi_id": "referral_link_click_conversion",
-      "name": "Referral Link Click Conversion",
-      "category": "referrals",
-      "status": "blocked_by_missing_data",
-      "tier": "tier_1",
-      "owner_team": "Growth / Marketing",
-      "business_definition": "Share of referral clicks that convert to signups or purchases.",
-      "time_grains": ["day", "week", "month"],
-      "dimensions": ["channel", "referrer_type"],
-      "required_tables": ["referral_click_events", "users", "transactions"],
+      "owner_team": "Segmentation / Analytics",
+      "business_definition": "Share of issuers with profile_completion >= 80%, split by issuer_type. Athlete-only in current data \u2014 creator_profile is unpopulated.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type",
+        "sport"
+      ],
+      "required_tables": [
+        "issuers",
+        "athlete_profile"
+      ],
       "required_columns": [
-        "referral_click_events.referral_id",
-        "referral_click_events.clicked_at",
-        "referral_click_events.user_id",
-        "users.referral_id",
-        "transactions.buyer_id"
+        "issuers.issuer_id",
+        "issuers.issuer_type",
+        "athlete_profile.issuer_id",
+        "athlete_profile.profile_completion"
       ],
       "required_joins": [
-        "referral_click_events.user_id = users.user_id",
-        "users.user_id = transactions.buyer_id"
+        "issuers.issuer_id = athlete_profile.issuer_id"
       ],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "ratio",
-        "numerator": "COUNT(referral clicks with downstream signup or purchase)",
-        "denominator": "COUNT(referral clicks)",
-        "group_by": ["channel"]
+        "numerator": "COUNT(DISTINCT athlete_profile.issuer_id) FILTER (WHERE athlete_profile.profile_completion >= 80)",
+        "denominator": "COUNT(DISTINCT issuers.issuer_id)",
+        "group_by": [
+          "issuers.issuer_type"
+        ]
       },
-      "example_questions": ["What is referral click-to-signup conversion by channel?"],
-      "quality_notes": ["Requires clickstream and attribution data, not currently present."],
-      "source_refs": ["ATHL KPI Framework - KPI.csv: Top Referral Sources and Referral Conversion Rate"],
-      "missing_dependencies": ["referral_click_events table", "referral attribution model"],
-      "aliases": ["referral conversion", "click to signup referral rate"]
+      "example_questions": [
+        "What is the profile completion rate for athletes vs creators?",
+        "Profile completion rate by issuer type",
+        "How complete are athlete profiles?"
+      ],
+      "quality_notes": [
+        "creator_profile is unpopulated in current data \u2014 athlete-only until creator profiles are generated.",
+        "Threshold default = 80%."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "issuer profile completion",
+        "profile completion rate",
+        "completion rate by type"
+      ]
+    },
+    {
+      "kpi_id": "issuer_onboarding_completion_rate",
+      "name": "Issuer Onboarding Completion Rate",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Issuer Success",
+      "business_definition": "Share of issuers who completed onboarding tracked in issuer_post_signup.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuer_post_signup",
+        "issuers"
+      ],
+      "required_columns": [
+        "issuer_post_signup.issuer_id",
+        "issuer_post_signup.onboarding_completed",
+        "issuers.issuer_type"
+      ],
+      "required_joins": [
+        "issuer_post_signup.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(DISTINCT issuer_post_signup.issuer_id) FILTER (WHERE issuer_post_signup.onboarding_completed = true)",
+        "denominator": "COUNT(DISTINCT issuers.issuer_id)",
+        "group_by": [
+          "issuers.issuer_type"
+        ]
+      },
+      "example_questions": [
+        "What is the issuer onboarding completion rate?",
+        "How many issuers completed onboarding?",
+        "Onboarding funnel completion by type"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "onboarding completion rate",
+        "issuer onboarding rate",
+        "onboarding funnel"
+      ]
+    },
+    {
+      "kpi_id": "wallet_provisioning_success_rate",
+      "name": "Wallet Provisioning Success Rate",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Issuer Success / Engineering",
+      "business_definition": "Share of issuers with a successfully provisioned wallet.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuer_post_signup"
+      ],
+      "required_columns": [
+        "issuer_post_signup.issuer_id",
+        "issuer_post_signup.wallet_provisioned"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(DISTINCT issuer_id) FILTER (WHERE wallet_provisioned = true)",
+        "denominator": "COUNT(DISTINCT issuer_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the wallet provisioning success rate?",
+        "How many issuers have a provisioned wallet?",
+        "Wallet setup success rate"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "wallet provisioning rate",
+        "wallet setup rate",
+        "wallet success rate"
+      ]
+    },
+    {
+      "kpi_id": "oauth_verification_completion_rate",
+      "name": "OAuth Verification Completion Rate",
+      "category": "issuer",
+      "section": "C",
+      "status": "active",
+      "owner_team": "Issuer Success",
+      "business_definition": "Share of issuers who verified at least 2 social platforms (oauth_verified_min2 = true).",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuer_post_signup"
+      ],
+      "required_columns": [
+        "issuer_post_signup.issuer_id",
+        "issuer_post_signup.oauth_verified_min2"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "COUNT(DISTINCT issuer_id) FILTER (WHERE oauth_verified_min2 = true)",
+        "denominator": "COUNT(DISTINCT issuer_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the OAuth verification completion rate?",
+        "How many issuers verified at least 2 social platforms?",
+        "Multi-platform verification rate"
+      ],
+      "quality_notes": [
+        "Flag: oauth_verified_min2 = at least 2 platforms verified."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: C. Issuer Ecosystem Health"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "oauth completion rate",
+        "social platform verification rate",
+        "multi platform oauth rate",
+        "oauth verification completion rate",
+        "oauth verification completion"
+      ]
+    },
+    {
+      "kpi_id": "amount_raised_vs_target",
+      "name": "Amount Raised vs Target",
+      "category": "finance",
+      "section": "D",
+      "status": "active",
+      "value_basis": "token_revenue_gross",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Total raised (gross completed transactions) vs issuer raise target from issuer_preferences. raise_target_usd is randomly generated in dummy data.",
+      "time_grains": [
+        "all_time",
+        "month"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "transactions",
+        "tokens",
+        "issuer_preferences"
+      ],
+      "required_columns": [
+        "transactions.total_amount_usdc",
+        "transactions.token_id",
+        "transactions.status",
+        "tokens.token_id",
+        "tokens.issuer_id",
+        "issuer_preferences.issuer_id",
+        "issuer_preferences.raise_target_usd"
+      ],
+      "required_joins": [
+        "transactions.token_id = tokens.token_id",
+        "tokens.issuer_id = issuer_preferences.issuer_id"
+      ],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "SUM(transactions.total_amount_usdc)",
+        "denominator": "MAX(issuer_preferences.raise_target_usd)",
+        "group_by": [
+          "tokens.issuer_id"
+        ]
+      },
+      "example_questions": [
+        "How much has each issuer raised versus their target?",
+        "Amount raised vs target by issuer",
+        "Funding progress per issuer",
+        "How close is each issuer to their raise target?"
+      ],
+      "quality_notes": [
+        "Filter: lower(transactions.status) = 'completed'.",
+        "raise_target_usd may be null \u2014 exclude or flag those issuers.",
+        "raise_target_usd is randomly generated in dummy data."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "raise progress",
+        "funding progress",
+        "raised vs target",
+        "amount raised vs goal"
+      ]
+    },
+    {
+      "kpi_id": "percent_supply_sold_30d",
+      "name": "Percent Supply Sold (30d)",
+      "category": "marketplace",
+      "section": "D",
+      "status": "active",
+      "owner_team": "Finance / Analytics",
+      "business_definition": "Tokens sold in first 30 days after mint divided by initial_supply.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "tokens",
+        "transactions"
+      ],
+      "required_columns": [
+        "tokens.token_id",
+        "tokens.initial_supply",
+        "tokens.mint_timestamp",
+        "transactions.token_id",
+        "transactions.quantity",
+        "transactions.timestamp",
+        "transactions.status"
+      ],
+      "required_joins": [
+        "transactions.token_id = tokens.token_id"
+      ],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'",
+        "transactions.timestamp <= tokens.mint_timestamp + INTERVAL '30 days'"
+      ],
+      "sql_recipe": {
+        "pattern": "ratio",
+        "numerator": "SUM(transactions.quantity)",
+        "denominator": "MAX(tokens.initial_supply)",
+        "group_by": [
+          "tokens.token_id"
+        ]
+      },
+      "example_questions": [
+        "What percent of supply was sold in the first 30 days?",
+        "30-day supply sell-through rate",
+        "Early supply conversion rate per token"
+      ],
+      "quality_notes": [
+        "Window: mint_timestamp to mint_timestamp + 30 days. Filter: lower(status)='completed'."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "30 day supply sold",
+        "early supply conversion",
+        "supply sold 30 days",
+        "first 30 day sell through"
+      ]
+    },
+    {
+      "kpi_id": "supply_remaining",
+      "name": "Supply Remaining",
+      "category": "marketplace",
+      "section": "D",
+      "status": "active",
+      "owner_team": "Product / Analytics",
+      "business_definition": "initial_supply minus total_sold per token. Never use current_supply_minted \u2014 always 0 in current data.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id",
+        "issuer_id"
+      ],
+      "required_tables": [
+        "tokens"
+      ],
+      "required_columns": [
+        "tokens.token_id",
+        "tokens.initial_supply",
+        "tokens.total_sold",
+        "tokens.issuer_id"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "numerator": "tokens.initial_supply - tokens.total_sold",
+        "denominator": null,
+        "group_by": [
+          "tokens.token_id"
+        ]
+      },
+      "example_questions": [
+        "How much supply remains for each token?",
+        "Remaining supply by token",
+        "How many tokens are left unsold?"
+      ],
+      "quality_notes": [
+        "Use initial_supply - total_sold. Never use current_supply_minted \u2014 always 0 in current data."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "remaining supply",
+        "unsold supply",
+        "tokens remaining",
+        "supply left"
+      ]
+    },
+    {
+      "kpi_id": "average_revenue_per_token",
+      "name": "Average Revenue Per Token",
+      "category": "finance",
+      "section": "D",
+      "status": "active",
+      "value_basis": "token_revenue_gross",
+      "owner_team": "Finance / Analytics",
+      "business_definition": "Mean gross revenue per token using tokens.total_revenue.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_id"
+      ],
+      "required_tables": [
+        "tokens"
+      ],
+      "required_columns": [
+        "tokens.token_id",
+        "tokens.total_revenue",
+        "tokens.issuer_id"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "average",
+        "numerator": "SUM(tokens.total_revenue)",
+        "denominator": "COUNT(tokens.token_id)",
+        "group_by": []
+      },
+      "example_questions": [
+        "What is the average revenue per token?",
+        "Mean token revenue",
+        "Average earnings per token"
+      ],
+      "quality_notes": [
+        "Use tokens.total_revenue (gross). Equals SUM(transactions.total_amount_usdc) per token by construction."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "avg revenue per token",
+        "mean token revenue",
+        "average token earnings",
+        "average revenue per token"
+      ]
+    },
+    {
+      "kpi_id": "revenue_growth_rate",
+      "name": "Revenue Growth Rate",
+      "category": "finance",
+      "section": "D",
+      "status": "active",
+      "value_basis": "token_revenue_gross",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Period-over-period growth in total gross token revenue.",
+      "time_grains": [
+        "week",
+        "month"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions"
+      ],
+      "required_columns": [
+        "transactions.total_amount_usdc",
+        "transactions.status",
+        "transactions.timestamp"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH monthly AS (SELECT DATE_TRUNC('month', timestamp) AS month, SUM(total_amount_usdc) AS rev FROM transactions WHERE lower(status)='completed' GROUP BY 1) SELECT month, rev, LAG(rev) OVER (ORDER BY month) AS prev_rev, (rev - LAG(rev) OVER (ORDER BY month)) / NULLIF(LAG(rev) OVER (ORDER BY month), 0) AS growth_rate FROM monthly"
+      },
+      "example_questions": [
+        "What is revenue growth rate month over month?",
+        "How fast is revenue growing?",
+        "Revenue growth this month vs last month"
+      ],
+      "quality_notes": [
+        "Filter: lower(transactions.status) = 'completed'. Use LAG window function."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "revenue growth",
+        "MoM revenue growth",
+        "WoW revenue growth"
+      ]
+    },
+    {
+      "kpi_id": "revenue_concentration",
+      "name": "Revenue Concentration",
+      "category": "finance",
+      "section": "D",
+      "status": "active",
+      "value_basis": "issuer_net",
+      "owner_team": "Finance / Risk",
+      "business_definition": "Share of platform issuer net revenue from the top-N issuers. Concentration risk metric.",
+      "time_grains": [
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "issuer_type"
+      ],
+      "required_tables": [
+        "issuer_daily_revenue",
+        "issuers"
+      ],
+      "required_columns": [
+        "issuer_daily_revenue.issuer_id",
+        "issuer_daily_revenue.total_amount_usdc",
+        "issuers.issuer_type"
+      ],
+      "required_joins": [
+        "issuer_daily_revenue.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH rev AS (SELECT issuer_id, SUM(total_amount_usdc) AS rev FROM issuer_daily_revenue GROUP BY issuer_id ORDER BY rev DESC LIMIT 5), total AS (SELECT SUM(total_amount_usdc) AS grand_total FROM issuer_daily_revenue) SELECT SUM(r.rev) / NULLIF(t.grand_total, 0) AS top5_revenue_share FROM rev r CROSS JOIN total t"
+      },
+      "example_questions": [
+        "What is revenue concentration among top issuers?",
+        "Revenue concentration risk",
+        "What share of revenue comes from the top 5 issuers?"
+      ],
+      "quality_notes": [
+        "Uses issuer_daily_revenue (net)."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "revenue concentration",
+        "issuer revenue concentration",
+        "top issuer dependence",
+        "revenue concentrated",
+        "concentrated among issuers"
+      ]
+    },
+    {
+      "kpi_id": "platform_fee_revenue",
+      "name": "Platform Fee Revenue (synthetic)",
+      "category": "finance",
+      "section": "D",
+      "status": "active",
+      "value_basis": "platform_fee",
+      "owner_team": "Finance / Revenue",
+      "business_definition": "Platform take = gross token revenue minus issuer net revenue (~0.2 x gross). SYNTHETIC until a real fee ledger exists.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "time_grain"
+      ],
+      "required_tables": [
+        "transactions",
+        "issuer_daily_revenue"
+      ],
+      "required_columns": [
+        "transactions.total_amount_usdc",
+        "transactions.status",
+        "issuer_daily_revenue.total_amount_usdc"
+      ],
+      "required_joins": [],
+      "multi_table_rationale": "Aggregate difference of two table totals (gross minus issuer net). Not a row-level join.",
+      "filters_defaults": [
+        "lower(transactions.status) = 'completed'"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "SELECT (SELECT SUM(total_amount_usdc) FROM transactions WHERE lower(status)='completed') - (SELECT SUM(total_amount_usdc) FROM issuer_daily_revenue) AS platform_fee_revenue"
+      },
+      "example_questions": [
+        "What is the platform fee revenue?",
+        "How much does the platform earn in fees?",
+        "Platform take rate revenue",
+        "What does the platform make?"
+      ],
+      "quality_notes": [
+        "SYNTHETIC: the 20% take is a generator constant, not a modeled fee. Flag this in output.",
+        "Derive as a difference so it stays correct if the generator ratio changes.",
+        "Do NOT match bare 'revenue' \u2014 that maps to total_token_revenue."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: D. Financial & Business"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "platform revenue",
+        "platform fees",
+        "fees",
+        "take rate",
+        "what the platform makes",
+        "platform fee revenue",
+        "platform fee"
+      ]
+    },
+    {
+      "kpi_id": "suspended_accounts",
+      "name": "Suspended Accounts",
+      "category": "trust",
+      "section": "E",
+      "status": "active",
+      "owner_team": "Trust & Safety",
+      "business_definition": "Count of suspended or restricted user accounts. Currently 0 \u2014 all accounts are ACTIVE in current data.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "user_role",
+        "country"
+      ],
+      "required_tables": [
+        "users"
+      ],
+      "required_columns": [
+        "users.user_id",
+        "users.account_status"
+      ],
+      "required_joins": [],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(user_id) FILTER (WHERE account_status NOT IN ('ACTIVE'))",
+        "denominator": null,
+        "group_by": []
+      },
+      "example_questions": [
+        "How many accounts are suspended?",
+        "Count of suspended users",
+        "Restricted account count"
+      ],
+      "quality_notes": [
+        "Returns 0 on current data \u2014 all account_status values are 'ACTIVE'. Correct degenerate result."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: E. Compliance, Trust & Risk"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "suspended accounts",
+        "restricted accounts",
+        "banned accounts",
+        "account suspensions"
+      ]
+    },
+    {
+      "kpi_id": "failed_identity_checks",
+      "name": "Failed Identity Checks",
+      "category": "trust",
+      "section": "E",
+      "status": "active",
+      "owner_team": "Trust & Safety",
+      "business_definition": "Count of failed identity verification checks. Fraud and risk signal.",
+      "time_grains": [
+        "day",
+        "week",
+        "month",
+        "all_time"
+      ],
+      "dimensions": [
+        "provider",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "identity_verification",
+        "issuers"
+      ],
+      "required_columns": [
+        "identity_verification.identity_check_id",
+        "identity_verification.status",
+        "issuers.issuer_type"
+      ],
+      "required_joins": [
+        "identity_verification.issuer_id = issuers.issuer_id"
+      ],
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "count_grouped",
+        "numerator": "COUNT(identity_check_id) FILTER (WHERE identity_verification.status = 'FAILED')",
+        "denominator": null,
+        "group_by": [
+          "provider",
+          "issuers.issuer_type"
+        ]
+      },
+      "example_questions": [
+        "How many identity checks failed?",
+        "Failed KYC count by provider",
+        "Identity verification failure rate"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: E. Compliance, Trust & Risk"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "failed kyc",
+        "identity check failures",
+        "failed identity verification"
+      ]
+    },
+    {
+      "kpi_id": "high_risk_wallet_concentration",
+      "name": "High Risk Wallet Concentration",
+      "category": "trust",
+      "section": "E",
+      "status": "active",
+      "owner_team": "Risk / Compliance",
+      "business_definition": "Tokens where the top wallet holds more than 50% of circulating supply \u2014 concentration risk heuristic.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "token_id"
+      ],
+      "required_tables": [
+        "user_token_wallet"
+      ],
+      "required_columns": [
+        "user_token_wallet.token_id",
+        "user_token_wallet.user_id",
+        "user_token_wallet.quantity"
+      ],
+      "required_joins": [],
+      "filters_defaults": [
+        "user_token_wallet.quantity > 0"
+      ],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "WITH holder AS (SELECT token_id, user_id, quantity, SUM(quantity) OVER (PARTITION BY token_id) AS total FROM user_token_wallet WHERE quantity > 0) SELECT token_id, MAX(quantity) / NULLIF(MAX(total), 0) AS top_holder_share FROM holder GROUP BY token_id HAVING MAX(quantity) / NULLIF(MAX(total), 0) > 0.5"
+      },
+      "example_questions": [
+        "Which tokens have high wallet concentration risk?",
+        "Tokens dominated by a single holder",
+        "High risk wallet concentration"
+      ],
+      "quality_notes": [
+        "Default threshold: top holder >50% of supply. Adjust as needed."
+      ],
+      "source_refs": [
+        "kpi_canonical_list.md: E. Compliance, Trust & Risk"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "wallet risk concentration",
+        "high concentration tokens",
+        "whale risk",
+        "wallet concentration risk"
+      ]
+    },
+    {
+      "kpi_id": "country_distribution",
+      "name": "Country Distribution",
+      "category": "trust",
+      "section": "E",
+      "status": "active",
+      "owner_team": "Compliance / Analytics",
+      "business_definition": "Geographic distribution of users and issuers by country. Compliance view.",
+      "time_grains": [
+        "all_time"
+      ],
+      "dimensions": [
+        "country",
+        "user_role",
+        "issuer_type"
+      ],
+      "required_tables": [
+        "users",
+        "issuers"
+      ],
+      "required_columns": [
+        "users.user_id",
+        "users.country",
+        "issuers.issuer_id",
+        "issuers.country"
+      ],
+      "required_joins": [],
+      "multi_table_rationale": "Two separate count queries on users and issuers by country \u2014 UNION ALL, no row-level join.",
+      "filters_defaults": [],
+      "sql_recipe": {
+        "pattern": "raw_sql",
+        "raw_sql": "SELECT 'user' AS entity_type, country, COUNT(user_id) AS count FROM users GROUP BY country UNION ALL SELECT 'issuer' AS entity_type, country, COUNT(issuer_id) AS count FROM issuers GROUP BY country ORDER BY entity_type, count DESC"
+      },
+      "example_questions": [
+        "What is the country distribution across users and issuers?",
+        "Country breakdown of users and issuers",
+        "Which countries have the most users?",
+        "User distribution by country"
+      ],
+      "quality_notes": [],
+      "source_refs": [
+        "kpi_canonical_list.md: E. Compliance, Trust & Risk"
+      ],
+      "missing_dependencies": [],
+      "aliases": [
+        "geographic distribution",
+        "country breakdown",
+        "users by country",
+        "issuers by country"
+      ]
     }
   ]
 }

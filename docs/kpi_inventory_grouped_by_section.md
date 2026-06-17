@@ -1,357 +1,705 @@
-# KPI Inventory Grouped by Section
+# KPI Inventory — Grouped by Section
 
-Status legend:
-- `active`: computable with current schema
-- `partial`: computable with caveats
-- `blocked`: not currently operational (missing data/events)
-- `deprecated`: intentionally removed from runtime catalog
+> Auto-generated from `app/rag/catalog/kpi_catalog.json` (version 2.0.0).  
+> Do not hand-edit — run `python app/rag/catalog/generate_kpi_docs.py` to regenerate.
 
-Canonical legend:
-- `canonical tier_1`: KPI exists in `app/rag/catalog/kpi_catalog.json` with `tier = tier_1`
-- `canonical tier_2`: KPI exists in `app/rag/catalog/kpi_catalog.json` with `tier = tier_2`
-- If a KPI is not listed below, it is currently non-canonical inventory coverage only.
+**62 KPIs total** (62 active, 0 blocked)
 
-## Canonical KPIs Included In This Inventory
+---
 
-### Verification and Trust
-- `id_verification_opt_in_rate` - canonical tier_1, active
-- `id_verification_pass_rate` - canonical tier_1, active
-- `id_verification_completion_rate` - canonical tier_1, active
-- `manual_review_rate` - canonical tier_1, active
-- `social_verification_success_rate` - canonical tier_1, active
-- `social_verification_retry_rate` - canonical tier_1, active
-- `login_attempt_volume` - canonical tier_1, blocked
-- `session_timeout_rate` - canonical tier_1, blocked
-- `mfa_success_rate` - canonical tier_1, blocked
-- `anomaly_detection_rate` - canonical tier_1, blocked
-- `support_contact_rate` - canonical tier_1, blocked
+## A. Marketplace Health & Liquidity
 
-### Trading, Revenue, and Token Performance
-- `amount_raised_vs_target` - canonical tier_1, active
-- `percent_supply_sold_30d` - canonical tier_1, active
-- `issuer_daily_revenue` - canonical tier_1, active
-- `token_leaderboard_most_traded` - canonical tier_1, active
-- `total_platform_revenue` - canonical tier_2, active
-- `active_trading_users` - canonical tier_2, active
-- `participation_rate` - canonical tier_2, active
-- `average_transaction_size_usdc` - canonical tier_2, active
-- `average_tokens_per_transaction` - canonical tier_2, active
-- `token_number_of_buyers` - canonical tier_2, active
-- `average_selling_price` - canonical tier_2, active
-- `total_purchases_by_user` - canonical tier_2, active
+_17 KPIs — 17 active, 0 blocked_
 
-### Issuer and Supply
-- `issuer_type_distribution` - canonical tier_1, active
-- `profile_completion_rate_by_issuer_type` - canonical tier_1, active
-- `tokens_issued_count` - canonical tier_2, active
-- `total_supply_issued` - canonical tier_2, active
+### `total_token_revenue`
+**Total Token Revenue**  ✓ active
 
-### Referral and Growth
-- `referral_link_click_conversion` - canonical tier_1, blocked
+Total USDC value of completed transactions, platform-wide. Group by token_id for per-token revenue. This is the same number sometimes called GTV; it is revenue, not a trade count or quantity.
 
-## Deprecated Runtime Items
-- `waitlist_approval_rate` - deprecated (removed from runtime catalog)
-- `issuer_activation_rate` - deprecated (removed from runtime catalog)
+- **value_basis:** `token_revenue_gross`
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain, token_id, issuer_id
+- **recipe pattern:** `sum_grouped`
+- **example:** 'What is total token revenue this month?'
 
-## Dashboards Product Analytics
+### `total_transactions`
+**Total Transactions**  ✓ active
 
-### Fan Journey Analytics 
-**Blocked**
-- `fan_signup_funnel_conversion` - non-canonical
-  - Calculation: stepwise conversion `step_users(n)/step_users(n-1)` across `landing -> email -> OAuth -> KYC -> purchase`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
-- `onboarding_dropoff_rate_by_step` - non-canonical
-  - Calculation: `1 - (next_step_users/prior_step_users)` for each funnel step.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
-- `visitor_to_wallet_connect_conversion` - non-canonical
-  - Calculation: `wallet_connect_users / unique_visitors`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
-- `time_to_first_token_purchase` - non-canonical
-  - Calculation: `first_purchase_ts - signup_ts` (median/avg).
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
-- `homepage_to_purchase_funnel_conversion` - non-canonical
-  - Calculation: `purchase_sessions / homepage_sessions` with ordered path `Homepage -> ATHLScan -> Issuer -> Purchase`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
-- `feature_click_metrics` - non-canonical
-  - Calculation: event counts or CTR for `Add to Watchlist`, `Share Profile`, `View Perks`, referral click.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
-- `embed_usage_and_conversion` - non-canonical
-  - Calculation: `embed_clicks/embed_impressions` plus downstream `signup/purchase` attribution.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Fan Journey Analytics`).
+Count of completed transactions platform-wide.
 
-### Issuer Activation and Engagement Analytics
-**Active**
-- `profile_completion_rate_by_issuer_type` - canonical tier_1
-  - Calculation: `COUNT(issuers_with_completion>=threshold) / COUNT(issuers)` by issuer type.
-  - Source: `app/rag/catalog/kpi_catalog.json`, `ATHL KPI Framework - KPI.csv`, `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf`.
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain, token_id
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many transactions were completed this month?'
 
-**Blocked**
-- `issuer_dashboard_login_frequency` - non-canonical
-  - Calculation: login event count per issuer post-launch.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Issuer Activation & Engagement Analytics`).
-- `issuer_referral_funnel_conversion` - non-canonical
-  - Calculation: `referral_clicks -> signups -> purchases` conversion by issuer.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Issuer Activation & Engagement Analytics`).
-- `issuer_feature_adoption_metrics` - non-canonical
-  - Calculation: usage counts for embeds, media uploads, perk updates, social share.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Issuer Activation & Engagement Analytics`).
+### `average_transaction_size_usdc`
+**Average Transaction Size (USDC)**  ✓ active
 
-**Deprecated**
-- `waitlist_approval_rate` - non-canonical
-  - Calculation: `approved_waitlist / total_waitlist`.
-  - Source: `ATHL KPI Framework - KPI.csv`.
-- `issuer_activation_rate` - non-canonical
-  - Calculation: `activated_waitlist / approved_waitlist`.
-  - Source: `ATHL KPI Framework - KPI.csv`.
+Average USDC value per completed transaction.
 
-### Trading Behavior and Token Lifecycle
-**Partial**
-- `repeat_buyers_per_token` - non-canonical
-  - Calculation: `COUNT(DISTINCT buyer_id where buy_count > 1)` per token.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Trading Behavior & Token Lifecycle`).
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain, token_id
+- **recipe pattern:** `average`
+- **example:** 'What is the average transaction size in USDC?'
 
-**Blocked**
-- `average_token_holding_time` - non-canonical
-  - Calculation: average `(exit_ts - first_buy_ts)` per lot/holder.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Trading Behavior & Token Lifecycle`).
-- `sell_side_time_to_exit` - non-canonical
-  - Calculation: average time from first buy to first sell/full exit.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Trading Behavior & Token Lifecycle`).
-- `price_drop_before_sell` - non-canonical
-  - Calculation: price delta in lookback window before sell event.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Trading Behavior & Token Lifecycle`).
-- `price_volatility_vs_engagement` - non-canonical
-  - Calculation: correlation(`volatility`, `engagement_metric`) by token/window.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Trading Behavior & Token Lifecycle`).
-- `token_page_visits_vs_actions` - non-canonical
-  - Calculation: compare/ratio of page visits to purchases/watchlist adds.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Trading Behavior & Token Lifecycle`).
+### `average_token_price`
+**Average Token Price**  ✓ active
 
-### Product Usage by Platform and Segment
-**Blocked**
-- `active_sessions_by_device` - non-canonical
-  - Calculation: `COUNT(DISTINCT session_id)` grouped by device.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Product Usage by Platform & Segment`).
-- `conversion_rate_by_cohort` - non-canonical
-  - Calculation: `converted_users / cohort_users` by source/segment/device.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Product Usage by Platform & Segment`).
-- `session_length_by_page` - non-canonical
-  - Calculation: avg `(session_end - session_start)` by route/page.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Product Usage by Platform & Segment`).
-- `bounce_rate_by_page` - non-canonical
-  - Calculation: `single_page_sessions / entry_sessions` by page.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Product Usage by Platform & Segment`).
-- `wallet_connection_abandonment_rate` - non-canonical
-  - Calculation: `(wallet_connect_started - wallet_connect_completed)/wallet_connect_started` by device.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Product Usage by Platform & Segment`).
+Average current_price across all tokens. current_price is a bonding-curve function of total_sold, not an independent market price.
 
-### Experimentation and Growth Optimization
-**Blocked**
-- `ab_test_lift_issuer_page_layout` - non-canonical
-  - Calculation: `conversion_treatment - conversion_control`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Experimentation & Growth Optimization`).
-- `ab_test_lift_buy_cta_copy` - non-canonical
-  - Calculation: buy conversion lift by CTA variant.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Experimentation & Growth Optimization`).
-- `social_proof_badge_conversion_lift` - non-canonical
-  - Calculation: conversion delta with vs without social proof badge.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Experimentation & Growth Optimization`).
-- `notification_or_gamification_lift` - non-canonical
-  - Calculation: retention/purchase lift after nudge or gamified alert exposure.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Experimentation & Growth Optimization`).
+- **tables:** `tokens`
+- **dimensions:** issuer_type
+- **recipe pattern:** `average`
+- **example:** 'What is the average token price across the platform?'
 
-### Retention Analysis
-**Blocked**
-- `retention_by_segment_d1_d7_d30` - non-canonical
-  - Calculation: retained users at day `1/7/30` over cohort size by segment.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Retention Analysis`).
-- `activation_behavior_retention_correlation` - non-canonical
-  - Calculation: retention differences by activation behaviors (e.g., add 3+ tokens).
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Retention Analysis`).
-- `reactivation_nudge_effectiveness` - non-canonical
-  - Calculation: reactivated users after nudge / nudged users.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`2-1 Retention Analysis`).
+### `token_price_growth_rate`
+**Token Price Growth Rate**  ✓ active
 
-## Dashboards Customer-Facing Dashboards
+Price change per token over a window, derived from ending_price ordered by timestamp. Powers top-gainers view. No price-history table — reconstruct from transactions.
 
-### Fan Dashboard
-**Active**
-- `wallet_balance_snapshot` - non-canonical
-  - Calculation: current balances from `user_wallet` plus token holdings value.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-1 Fan Dashboard`), `docs/database_schema_taxonomy.md`.
-- `holdings_table_core_metrics` - non-canonical
-  - Calculation: per token `quantity`, `price`, `value = quantity * price`, and change%.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-1 Fan Dashboard`).
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** token_id
+- **recipe pattern:** `raw_sql`
+- **example:** 'Which tokens have gained the most in price this week?'
 
-**Partial**
-- `wallet_balance_growth_timeseries` - non-canonical
-  - Calculation: portfolio value over selected windows (`24h`, `1w`, `1m`, etc.).
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-1 Fan Dashboard`).
-- `referral_summary_metrics` - non-canonical
-  - Calculation: referred signups and rewards earned per user.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-1 Fan Dashboard`).
+### `active_tradable_tokens`
+**Active Tradable Tokens**  ✓ active
 
-**Blocked**
-- `watchlist_interaction_metrics` - non-canonical
-  - Calculation: watchlist adds/removes and trend over time.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-1 Fan Dashboard`).
-- `suggested_tokens_effectiveness` - non-canonical
-  - Calculation: recommendation CTR and purchase uplift.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-1 Fan Dashboard`).
+Tokens with paused_sales = false and at least one completed transaction.
 
-### Issuer-Specific Purchase Page
-**Active**
-- `current_token_price` - non-canonical
-  - Calculation: latest token price from `tokens.current_price` or latest trade `ending_price`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`), `docs/database_schema_taxonomy.md`.
-- `token_price_history` - non-canonical
-  - Calculation: time-series of token trade prices by timestamp.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`).
-- `total_tokens_sold` - non-canonical
-  - Calculation: `SUM(transactions.quantity)` per token.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`), `docs/database_schema_taxonomy.md`.
-- `total_raised_usd` - non-canonical
-  - Calculation: `SUM(transactions.total_amount_usdc)` per token/issuer.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`), `docs/database_schema_taxonomy.md`.
-- `supply_remaining` - non-canonical
-  - Calculation: `initial_supply - total_sold`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`), `docs/database_schema_taxonomy.md`.
-- `purchase_history_user_level` - non-canonical
-  - Calculation: transaction list with timestamp, price, quantity, total value per user.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`).
+- **tables:** `tokens`, `transactions`
+- **joins:** `tokens.token_id = transactions.token_id`
+- **default filters:** `tokens.paused_sales = false`, `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many tokens are actively tradable?'
 
-**Partial**
-- `daily_price_change_pct` - non-canonical
-  - Calculation: `(price_now - price_24h_ago)/price_24h_ago`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-2`).
+### `tokens_with_no_trading_activity`
+**Tokens With No Trading Activity**  ✓ active
 
-### Issuer Dashboard
-**Active**
-- `amount_raised_vs_target` - canonical tier_1
-  - Calculation: `SUM(total_amount_usdc) / raise_target_usd` by issuer.
-  - Source: `app/rag/catalog/kpi_catalog.json`, `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
-- `issuer_daily_revenue` - canonical tier_1
-  - Calculation: daily `SUM(total_amount_usdc)` by issuer/date.
-  - Source: `app/rag/catalog/kpi_catalog.json`, `docs/database_schema_taxonomy.md`, `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
-- `holder_concentration_top10_share` - non-canonical
-  - Calculation: `(sum quantity of top 10 holders)/(total quantity held)` per token.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
+Tokens with zero completed transactions.
 
-**Partial**
-- `revenue_source_breakdown` - non-canonical
-  - Calculation: split revenue by primary sales, secondary fees, referrals.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
-- `referral_click_to_signup_to_purchase_funnel` - non-canonical
-  - Calculation: multi-step referral conversion chain.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
+- **tables:** `tokens`, `transactions`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'How many tokens have never been traded?'
 
-**Blocked**
-- `perks_delivered_rate` - non-canonical
-  - Calculation: `delivered_perks / eligible_perks`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
-- `community_engagement_metrics` - non-canonical
-  - Calculation: page views, watchlist adds/removes, shares/mentions trends.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
-- `top_referrers` - non-canonical
-  - Calculation: rank referrers by downstream signups/purchases.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-3`).
+### `total_market_capitalization`
+**Total Market Capitalization**  ✓ active
 
-### ATHLScan Public Token Explorer
-**Active**
-- `live_trade_feed_core_metrics` - non-canonical
-  - Calculation: show each transaction with timestamp, quantity/value, execution price, buyer/seller.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
-- `token_overview_current_price_volume_holders_launch_date` - non-canonical
-  - Calculation: combine `current_price`, daily volume, holders count, launch date.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
-- `token_leaderboard_most_traded` - canonical tier_1
-  - Calculation: rank by trade volume or transaction count in selected window.
-  - Source: `app/rag/catalog/kpi_catalog.json`, `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`), `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf`.
-- `token_leaderboard_top_gainers` - non-canonical
-  - Calculation: rank by highest `% price increase` over selected period.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
-- `token_leaderboard_most_holders` - non-canonical
-  - Calculation: rank by `COUNT(DISTINCT holder)` per token.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
+SUM(current_price x total_sold) across all tokens. Circulating supply = total_sold (never current_supply_minted which is always 0).
 
-**Partial**
-- `token_price_change_24h_pct` - non-canonical
-  - Calculation: `(price_now - price_24h_ago)/price_24h_ago`.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
+- **tables:** `tokens`
+- **dimensions:** issuer_type
+- **recipe pattern:** `sum_grouped`
+- **example:** 'What is the total market cap of all tokens?'
 
-**Blocked**
-- `watchlist_popularity` - non-canonical
-  - Calculation: rank by watchlist add counts.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
-- `trade_reversal_rate` - non-canonical
-  - Calculation: reversed transactions / all transactions.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
-- `suspicious_trade_flag_rate` - non-canonical
-  - Calculation: flagged suspicious trades / all trades.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Dashboards.pdf` (`3-4`).
+### `token_liquidity_velocity`
+**Token Liquidity Velocity**  ✓ active
 
-## Leaderboard Document
+Traded quantity divided by total_sold per token. Measures turnover rate.
 
-### Generic Leaderboard
-**Partial**
-- `token_demand_subscore` - non-canonical
-  - Calculation: weighted mint volume, buy/sell volume, and price movement.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2 Ranking Logic`).
-- `earnings_based_leaderboard` - non-canonical
-  - Calculation: rank by revenue/earnings/reward payouts where available.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2 Earnings-Based`).
+- **tables:** `transactions`, `tokens`
+- **joins:** `transactions.token_id = tokens.token_id`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** token_id
+- **recipe pattern:** `ratio`
+- **example:** 'What is the trading velocity for each token?'
 
-**Blocked**
-- `overall_athlete_composite_score` - non-canonical
-  - Calculation: weighted blend of token demand, engagement, participation, social growth.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2`).
-- `engagement_subscore` - non-canonical
-  - Calculation: weighted likes/saves/comments/shares/video interactions.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2 Ranking Logic`).
-- `community_participation_subscore` - non-canonical
-  - Calculation: AMA/challenge participation weighted score.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2`).
-- `social_growth_subscore` - non-canonical
-  - Calculation: follower velocity and social growth over selected window.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2`).
-- `trending_score` - non-canonical
-  - Calculation: short-window momentum score from 24h/48h spikes.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2 Trending`).
-- `fan_favorites_score` - non-canonical
-  - Calculation: weighted votes/likes/cheers/boosts with reset period.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`2 Fan Favorites`).
+### `token_holders_count`
+**Token Holders Count**  ✓ active
 
-### Ranking Logic and Scoring
-**Partial**
-- `token_performance_component` - non-canonical
-  - Calculation: weighted minted tokens, trade volume, and price movement.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Ranking Logic & Scoring`).
+Distinct holders per token (users with quantity > 0). Powers ATHLScan holders view and most-holders leaderboard.
 
-**Blocked**
-- `profile_activity_component` - non-canonical
-  - Calculation: weighted daily active fans, new followers, profile views.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Ranking Logic & Scoring`).
-- `consistency_component` - non-canonical
-  - Calculation: weighted posting frequency and challenge participation.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Ranking Logic & Scoring`).
+- **tables:** `user_token_wallet`
+- **default filters:** `user_token_wallet.quantity > 0`
+- **dimensions:** token_id
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many holders does each token have?'
 
-### Success Metrics
-**Partial**
-- `mint_volume_uplift` - non-canonical
-  - Calculation: delta in mint/trade volume before vs after leaderboard interactions.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Success Metrics`).
+### `token_holder_distribution`
+**Token Holder Distribution**  ✓ active
 
-**Blocked**
-- `athlete_discovery_profile_views` - non-canonical
-  - Calculation: change in profile views after leaderboard exposure.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Success Metrics`).
-- `fan_engagement_per_athlete` - non-canonical
-  - Calculation: interactions per athlete per time window.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Success Metrics`).
-- `athlete_posting_frequency` - non-canonical
-  - Calculation: posts per athlete per time window.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Success Metrics`).
-- `fan_and_athlete_retention` - non-canonical
-  - Calculation: returning cohort percentage for fans/athletes by period.
-  - Source: `ATHL Data Infrastructure Blueprint_ Internal - Ali Leaderboard.pdf` (`Success Metrics`).
+Distribution of holdings within a token across holders.
 
+- **tables:** `user_token_wallet`
+- **default filters:** `user_token_wallet.quantity > 0`
+- **dimensions:** token_id
+- **recipe pattern:** `sum_grouped`
+- **example:** 'How are token holdings distributed among holders?'
+
+### `wallet_concentration_ratio`
+**Wallet Concentration Ratio**  ✓ active
+
+Share of holdings held by top wallets per token — whale concentration detection.
+
+- **tables:** `user_token_wallet`
+- **default filters:** `user_token_wallet.quantity > 0`
+- **dimensions:** token_id
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the wallet concentration for each token?'
+
+### `top_tokens_share_of_volume`
+**Top Tokens Share of Volume**  ✓ active
+
+Share of total transaction volume held by the top-N tokens. Volume concentration risk metric.
+
+- **tables:** `transactions`, `tokens`
+- **joins:** `transactions.token_id = tokens.token_id`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** token_id
+- **recipe pattern:** `raw_sql`
+- **example:** 'What share of volume do the top 10 tokens account for?'
+
+### `token_leaderboard_most_traded`
+**Top Tokens by Volume**  ✓ active
+
+Token ranking by traded volume or transaction count in a time window. Leaderboard guardrail: only matches ranking-style questions.
+
+- **tables:** `transactions`, `tokens`
+- **joins:** `transactions.token_id = tokens.token_id`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** token_id, issuer_type, time_window
+- **recipe pattern:** `raw_sql`
+- **example:** 'What are the top 10 tokens by trading volume this week?'
+
+### `buy_vs_sell_ratio`
+**Buy vs Sell Ratio**  ✓ active
+
+Ratio of buy-side to sell-side transaction activity. Degenerate on current data — all transactions are primary sales.
+
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `ratio`
+- **example:** 'What is the buy to sell ratio?'
+
+### `secondary_market_share`
+**Secondary Market Share**  ✓ active
+
+Share of volume from secondary (peer-to-peer) trading. Currently 0% — no secondary trading exists.
+
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `ratio`
+- **example:** 'What percentage of volume is from secondary trading?'
+
+### `failed_reversed_transactions`
+**Failed or Reversed Transactions**  ✓ active
+
+Count of failed or reversed transactions. Currently 0 — none generated in current data.
+
+- **tables:** `transactions`
+- **dimensions:** time_grain
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many transactions failed or were reversed?'
+
+## B. User Growth & Engagement
+
+_12 KPIs — 12 active, 0 blocked_
+
+### `net_new_users`
+**Net New Users**  ✓ active
+
+New registered users by time grain, using users.created_at.
+
+- **tables:** `users`
+- **dimensions:** time_grain, country
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many new users signed up this week?'
+
+### `total_registered_users`
+**Total Registered Users**  ✓ active
+
+Total count of all registered users.
+
+- **tables:** `users`
+- **dimensions:** country, user_role
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many total registered users do we have?'
+
+### `user_growth_rate`
+**User Growth Rate**  ✓ active
+
+Period-over-period growth in registered users.
+
+- **tables:** `users`
+- **dimensions:** time_grain
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the month over month user growth rate?'
+
+### `active_traders`
+**Active Traders**  ✓ active
+
+Distinct users who completed a transaction in the period (buyer_id only). MAT = month grain. seller_id excluded — equals issuer user_id on all primary sales.
+
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many active traders did we have this month?'
+
+### `active_sellers`
+**Active Sellers**  ✓ active
+
+Distinct sellers in the period. In current data, sellers = issuers (all transactions are primary sales).
+
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many active sellers are there?'
+
+### `buyer_to_seller_ratio`
+**Buyer to Seller Ratio**  ✓ active
+
+Ratio of distinct active buyers to distinct active sellers in a period.
+
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `ratio`
+- **example:** 'What is the ratio of buyers to sellers?'
+
+### `repeat_buyer_rate`
+**Repeat Buyer Rate**  ✓ active
+
+Share of buyers who made more than one completed transaction.
+
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `raw_sql`
+- **example:** 'What percentage of buyers made more than one purchase?'
+
+### `multi_token_ownership_rate`
+**Multi-Token Ownership Rate**  ✓ active
+
+Share of token holders who hold more than one distinct token.
+
+- **tables:** `user_token_wallet`
+- **default filters:** `user_token_wallet.quantity > 0`
+- **recipe pattern:** `raw_sql`
+- **example:** 'What share of users hold more than one token?'
+
+### `average_wallet_balance`
+**Average Wallet Balance**  ✓ active
+
+Average USDC wallet balance per user. usdc_balance is cost-basis, not mark-to-market.
+
+- **tables:** `user_wallet`
+- **dimensions:** user_role
+- **recipe pattern:** `average`
+- **example:** 'What is the average wallet balance?'
+
+### `funded_wallet_rate`
+**Funded Wallet Rate**  ✓ active
+
+Share of wallets with a positive USDC balance.
+
+- **tables:** `user_wallet`
+- **recipe pattern:** `ratio`
+- **example:** 'What share of wallets have a positive balance?'
+
+### `mfa_adoption_rate`
+**MFA Adoption Rate**  ✓ active
+
+Share of users with MFA enabled. Currently 0% — mfa_enabled = false for all rows in current data.
+
+- **tables:** `users`
+- **dimensions:** user_role
+- **recipe pattern:** `ratio`
+- **example:** 'What is the MFA adoption rate?'
+
+### `verified_email_rate`
+**Verified Email Rate**  ✓ active
+
+Share of users with a verified email address.
+
+- **tables:** `users`
+- **dimensions:** user_role, country
+- **recipe pattern:** `ratio`
+- **example:** 'What percentage of users have verified their email?'
+
+## C. Issuer Ecosystem Health
+
+_22 KPIs — 22 active, 0 blocked_
+
+### `total_issuers`
+**Total Issuers**  ✓ active
+
+Count of all issuers on the platform.
+
+- **tables:** `issuers`
+- **dimensions:** issuer_type, level, country
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many total issuers are on the platform?'
+
+### `verified_issuers`
+**Verified Issuers**  ✓ active
+
+Count of issuers with status = 'PASSED' (fully verified).
+
+- **tables:** `issuers`
+- **default filters:** `issuers.status = 'PASSED'`
+- **dimensions:** issuer_type
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many issuers are fully verified?'
+
+### `verification_pass_rate`
+**Verification Pass Rate**  ✓ active
+
+Fully-verified issuers (status='PASSED') divided by all issuers. The single executive-level verification KPI.
+
+- **tables:** `issuers`
+- **dimensions:** issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the issuer verification pass rate?'
+
+### `id_verification_pass_rate`
+**ID Verification Pass Rate**  ✓ active
+
+Share of completed identity checks that passed.
+
+- **tables:** `identity_verification`, `issuers`
+- **joins:** `identity_verification.issuer_id = issuers.issuer_id`
+- **default filters:** `identity_verification.completed_at IS NOT NULL`
+- **dimensions:** provider, level, issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the ID verification pass rate by provider?'
+
+### `id_verification_opt_in_rate`
+**ID Verification Opt-In Rate**  ✓ active
+
+Share of issuers who opted into identity verification.
+
+- **tables:** `identity_verification`, `issuers`
+- **joins:** `identity_verification.issuer_id = issuers.issuer_id`
+- **dimensions:** issuer_type, provider, country
+- **recipe pattern:** `ratio`
+- **example:** 'What is the ID verification opt-in rate?'
+
+### `id_verification_completion_rate`
+**ID Verification Completion Rate**  ✓ active
+
+Share of initiated identity checks that reached completion.
+
+- **tables:** `identity_verification`, `issuers`
+- **joins:** `identity_verification.issuer_id = issuers.issuer_id`
+- **default filters:** `identity_verification.initiated_at IS NOT NULL`
+- **dimensions:** provider, issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the identity verification completion rate?'
+
+### `manual_review_rate`
+**Manual Review Rate**  ✓ active
+
+Share of identity verification checks that required manual review.
+
+- **tables:** `identity_verification`, `issuers`
+- **joins:** `identity_verification.issuer_id = issuers.issuer_id`
+- **dimensions:** provider, issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What percent of ID checks go to manual review?'
+
+### `social_verification_pass_rate`
+**Social Verification Pass Rate**  ✓ active
+
+Successful social verifications divided by total social verification attempts.
+
+- **tables:** `social_verification`, `issuers`
+- **joins:** `social_verification.issuer_id = issuers.issuer_id`
+- **dimensions:** platform, issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the social verification pass rate?'
+
+### `social_verification_retry_rate`
+**Social Verification Retry Rate**  ✓ active
+
+Average number of attempts per social verification flow.
+
+- **tables:** `social_verification`, `issuers`
+- **joins:** `social_verification.issuer_id = issuers.issuer_id`
+- **default filters:** `social_verification.attempts IS NOT NULL`
+- **dimensions:** platform, issuer_type
+- **recipe pattern:** `average`
+- **example:** 'How many retries do issuers need for social verification?'
+
+### `issuer_activation_rate`
+**Issuer Activation Rate**  ✓ active
+
+Issuers with a live token and at least one completed sale divided by all issuers. Old waitlist definition is retired.
+
+- **tables:** `issuers`, `tokens`, `transactions`
+- **joins:** `tokens.issuer_id = issuers.issuer_id`, `transactions.token_id = tokens.token_id`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'What share of issuers have made at least one sale?'
+
+### `token_launch_success_rate`
+**Token Launch Success Rate**  ✓ active
+
+Issuers with a live token (paused_sales = false) divided by issuers who created any token record.
+
+- **tables:** `issuers`, `tokens`
+- **joins:** `tokens.issuer_id = issuers.issuer_id`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the token launch success rate?'
+
+### `issuer_revenue`
+**Issuer Revenue**  ✓ active
+
+Revenue per issuer, net of the platform take (~80% of gross). Source: issuer_daily_revenue.total_amount_usdc. FK issuer_daily_revenue.issuer_id -> issuers.issuer_id is clean.
+
+- **value_basis:** `issuer_net`
+- **tables:** `issuer_daily_revenue`
+- **dimensions:** issuer_id, date
+- **recipe pattern:** `sum_grouped`
+- **example:** 'How much did each issuer earn?'
+
+### `average_revenue_per_issuer`
+**Average Revenue Per Issuer**  ✓ active
+
+Mean issuer net revenue across all issuers.
+
+- **value_basis:** `issuer_net`
+- **tables:** `issuer_daily_revenue`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the average revenue per issuer?'
+
+### `top_issuer_revenue_share`
+**Top Issuer Revenue Share**  ✓ active
+
+Share of total issuer net revenue held by the top-N issuers.
+
+- **value_basis:** `issuer_net`
+- **tables:** `issuer_daily_revenue`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'What share of revenue do the top 10 issuers generate?'
+
+### `issuer_revenue_growth`
+**Issuer Revenue Growth**  ✓ active
+
+Period-over-period growth in issuer net revenue.
+
+- **value_basis:** `issuer_net`
+- **tables:** `issuer_daily_revenue`
+- **dimensions:** issuer_id
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the month over month issuer revenue growth?'
+
+### `issuers_with_zero_revenue`
+**Zero Revenue Issuers**  ✓ active
+
+Count and share of issuers with no revenue in issuer_daily_revenue.
+
+- **value_basis:** `issuer_net`
+- **tables:** `issuers`, `issuer_daily_revenue`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'How many issuers have made zero revenue?'
+
+### `athlete_vs_creator_split`
+**Athlete vs Creator Split**  ✓ active
+
+Distribution of issuers by issuer_type (athlete vs creator).
+
+- **tables:** `issuers`
+- **dimensions:** issuer_type, level
+- **recipe pattern:** `count_grouped`
+- **example:** 'What is the split between athletes and creators?'
+
+### `social_reach_verified_issuers`
+**Social Reach of Verified Issuers**  ✓ active
+
+Aggregate follower count across verified social accounts of issuers.
+
+- **tables:** `social_verification`, `issuers`
+- **joins:** `social_verification.issuer_id = issuers.issuer_id`
+- **default filters:** `social_verification.status = 'SUCCESS'`
+- **dimensions:** platform, issuer_type
+- **recipe pattern:** `sum_grouped`
+- **example:** 'What is the total social reach of verified issuers?'
+
+### `profile_completion_rate_by_issuer_type`
+**Profile Completion Rate by Issuer Type**  ✓ active
+
+Share of issuers with profile_completion >= 80%, split by issuer_type. Athlete-only in current data — creator_profile is unpopulated.
+
+- **tables:** `issuers`, `athlete_profile`
+- **joins:** `issuers.issuer_id = athlete_profile.issuer_id`
+- **dimensions:** issuer_type, sport
+- **recipe pattern:** `ratio`
+- **example:** 'What is the profile completion rate for athletes vs creators?'
+
+### `issuer_onboarding_completion_rate`
+**Issuer Onboarding Completion Rate**  ✓ active
+
+Share of issuers who completed onboarding tracked in issuer_post_signup.
+
+- **tables:** `issuer_post_signup`, `issuers`
+- **joins:** `issuer_post_signup.issuer_id = issuers.issuer_id`
+- **dimensions:** issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the issuer onboarding completion rate?'
+
+### `wallet_provisioning_success_rate`
+**Wallet Provisioning Success Rate**  ✓ active
+
+Share of issuers with a successfully provisioned wallet.
+
+- **tables:** `issuer_post_signup`
+- **dimensions:** issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the wallet provisioning success rate?'
+
+### `oauth_verification_completion_rate`
+**OAuth Verification Completion Rate**  ✓ active
+
+Share of issuers who verified at least 2 social platforms (oauth_verified_min2 = true).
+
+- **tables:** `issuer_post_signup`
+- **dimensions:** issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What is the OAuth verification completion rate?'
+
+## D. Financial & Business
+
+_7 KPIs — 7 active, 0 blocked_
+
+### `amount_raised_vs_target`
+**Amount Raised vs Target**  ✓ active
+
+Total raised (gross completed transactions) vs issuer raise target from issuer_preferences. raise_target_usd is randomly generated in dummy data.
+
+- **value_basis:** `token_revenue_gross`
+- **tables:** `transactions`, `tokens`, `issuer_preferences`
+- **joins:** `transactions.token_id = tokens.token_id`, `tokens.issuer_id = issuer_preferences.issuer_id`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'How much has each issuer raised versus their target?'
+
+### `percent_supply_sold_30d`
+**Percent Supply Sold (30d)**  ✓ active
+
+Tokens sold in first 30 days after mint divided by initial_supply.
+
+- **tables:** `tokens`, `transactions`
+- **joins:** `transactions.token_id = tokens.token_id`
+- **default filters:** `lower(transactions.status) = 'completed'`, `transactions.timestamp <= tokens.mint_timestamp + INTERVAL '30 days'`
+- **dimensions:** token_id, issuer_type
+- **recipe pattern:** `ratio`
+- **example:** 'What percent of supply was sold in the first 30 days?'
+
+### `supply_remaining`
+**Supply Remaining**  ✓ active
+
+initial_supply minus total_sold per token. Never use current_supply_minted — always 0 in current data.
+
+- **tables:** `tokens`
+- **dimensions:** token_id, issuer_id
+- **recipe pattern:** `raw_sql`
+- **example:** 'How much supply remains for each token?'
+
+### `average_revenue_per_token`
+**Average Revenue Per Token**  ✓ active
+
+Mean gross revenue per token using tokens.total_revenue.
+
+- **value_basis:** `token_revenue_gross`
+- **tables:** `tokens`
+- **dimensions:** issuer_id
+- **recipe pattern:** `average`
+- **example:** 'What is the average revenue per token?'
+
+### `revenue_growth_rate`
+**Revenue Growth Rate**  ✓ active
+
+Period-over-period growth in total gross token revenue.
+
+- **value_basis:** `token_revenue_gross`
+- **tables:** `transactions`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is revenue growth rate month over month?'
+
+### `revenue_concentration`
+**Revenue Concentration**  ✓ active
+
+Share of platform issuer net revenue from the top-N issuers. Concentration risk metric.
+
+- **value_basis:** `issuer_net`
+- **tables:** `issuer_daily_revenue`, `issuers`
+- **joins:** `issuer_daily_revenue.issuer_id = issuers.issuer_id`
+- **dimensions:** issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is revenue concentration among top issuers?'
+
+### `platform_fee_revenue`
+**Platform Fee Revenue (synthetic)**  ✓ active
+
+Platform take = gross token revenue minus issuer net revenue (~0.2 x gross). SYNTHETIC until a real fee ledger exists.
+
+- **value_basis:** `platform_fee`
+- **tables:** `transactions`, `issuer_daily_revenue`
+- **default filters:** `lower(transactions.status) = 'completed'`
+- **dimensions:** time_grain
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the platform fee revenue?'
+
+## E. Compliance, Trust & Risk
+
+_4 KPIs — 4 active, 0 blocked_
+
+### `suspended_accounts`
+**Suspended Accounts**  ✓ active
+
+Count of suspended or restricted user accounts. Currently 0 — all accounts are ACTIVE in current data.
+
+- **tables:** `users`
+- **dimensions:** user_role, country
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many accounts are suspended?'
+
+### `failed_identity_checks`
+**Failed Identity Checks**  ✓ active
+
+Count of failed identity verification checks. Fraud and risk signal.
+
+- **tables:** `identity_verification`, `issuers`
+- **joins:** `identity_verification.issuer_id = issuers.issuer_id`
+- **dimensions:** provider, issuer_type
+- **recipe pattern:** `count_grouped`
+- **example:** 'How many identity checks failed?'
+
+### `high_risk_wallet_concentration`
+**High Risk Wallet Concentration**  ✓ active
+
+Tokens where the top wallet holds more than 50% of circulating supply — concentration risk heuristic.
+
+- **tables:** `user_token_wallet`
+- **default filters:** `user_token_wallet.quantity > 0`
+- **dimensions:** token_id
+- **recipe pattern:** `raw_sql`
+- **example:** 'Which tokens have high wallet concentration risk?'
+
+### `country_distribution`
+**Country Distribution**  ✓ active
+
+Geographic distribution of users and issuers by country. Compliance view.
+
+- **tables:** `users`, `issuers`
+- **dimensions:** country, user_role, issuer_type
+- **recipe pattern:** `raw_sql`
+- **example:** 'What is the country distribution across users and issuers?'

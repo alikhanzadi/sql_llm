@@ -10,6 +10,11 @@ MATCH_THRESHOLD = 0.58
 AMBIGUOUS_MARGIN = 0.03
 LEADERBOARD_TERMS = {"top", "rank", "ranking", "highest", "lowest", "most", "least", "leaderboard"}
 
+# Cluster default-resolution: when top-2 candidates are within AMBIGUOUS_MARGIN,
+# resolve to the cluster default rather than falling back to schema-only.
+REVENUE_CLUSTER = {"total_token_revenue", "issuer_revenue", "platform_fee_revenue"}
+REVENUE_CLUSTER_DEFAULT = "total_token_revenue"
+
 
 @dataclass
 class KpiMatchDecision:
@@ -32,19 +37,34 @@ class KpiMatchDecision:
 
         kpi = self.kpi
         recipe = kpi.get("sql_recipe", {})
-        return (
-            "Canonical KPI Context:\n"
-            f"- kpi_id: {kpi.get('kpi_id', '')}\n"
-            f"- name: {kpi.get('name', '')}\n"
-            f"- definition: {kpi.get('business_definition', '')}\n"
-            f"- required_tables: {', '.join(kpi.get('required_tables', [])) or 'none'}\n"
-            f"- required_joins: {', '.join(kpi.get('required_joins', [])) or 'none'}\n"
-            f"- default_filters: {', '.join(kpi.get('filters_defaults', [])) or 'none'}\n"
-            f"- recipe_pattern: {recipe.get('pattern', '')}\n"
-            f"- recipe_numerator: {recipe.get('numerator', '')}\n"
-            f"- recipe_denominator: {recipe.get('denominator', '')}\n"
-            f"- recipe_group_by: {', '.join(recipe.get('group_by', [])) if isinstance(recipe.get('group_by'), list) else recipe.get('group_by', '')}"
-        )
+        group_by = recipe.get("group_by")
+        group_by_text = ", ".join(group_by) if isinstance(group_by, list) else (group_by or "none")
+
+        lines = [
+            "Canonical KPI Context (authoritative — follow this recipe exactly):",
+            f"- kpi_id: {kpi.get('kpi_id', '')}",
+            f"- name: {kpi.get('name', '')}",
+            f"- definition: {kpi.get('business_definition', '')}",
+            f"- required_tables: {', '.join(kpi.get('required_tables', [])) or 'none'}",
+            f"- required_joins: {', '.join(kpi.get('required_joins', [])) or 'none'}",
+            f"- MUST apply these filters: {', '.join(kpi.get('filters_defaults', [])) or 'none'}",
+        ]
+
+        # value_basis prevents gross/net/fee revenue confusion — always surface it.
+        if kpi.get("value_basis"):
+            lines.append(f"- value_basis: {kpi['value_basis']} (do not substitute a different revenue scale)")
+
+        # raw_sql recipes are the exact intended query — present them as the template.
+        raw_sql = recipe.get("raw_sql")
+        if raw_sql:
+            lines.append(f"- exact_sql_template (adapt aliases/filters as needed, keep the logic): {raw_sql}")
+        else:
+            lines.append(f"- recipe_pattern: {recipe.get('pattern', '')}")
+            lines.append(f"- recipe_numerator: {recipe.get('numerator', '') or 'none'}")
+            lines.append(f"- recipe_denominator: {recipe.get('denominator', '') or 'none'}")
+            lines.append(f"- recipe_group_by: {group_by_text}")
+
+        return "\n".join(lines)
 
     def blocked_message(self) -> str:
         """Build user-safe message for KPIs blocked by missing data dependencies."""
@@ -118,13 +138,61 @@ def _score_entry(question: str, q_tokens: set[str], kpi: dict, plan) -> float:
         if q_tokens & entity_tokens:
             score += 0.04
 
-    # Tiered canonical support: prefer tier_1 for planner routing.
-    if kpi.get("tier") == "tier_1":
-        score += 0.03
-    elif kpi.get("tier") == "tier_2":
-        score -= 0.02
-
     return min(score, 0.99)
+
+
+def _longest_match_in_question(kpi: dict, question: str) -> int:
+    """Return the character length of the longest name/alias substring found in question."""
+    name = _norm(kpi.get("name", ""))
+    aliases = [_norm(a) for a in kpi.get("aliases", [])]
+    candidates = [name] + aliases
+    return max((len(c) for c in candidates if c and c in question), default=0)
+
+
+def _resolve_ambiguous(best: dict, second: Optional[dict], question: str = "") -> Optional[dict]:
+    """
+    When two candidates are within AMBIGUOUS_MARGIN, attempt deterministic resolution.
+
+    Rules (in order):
+    1. If both candidates are in the revenue cluster, return the cluster default.
+    2. If the top-2 differ in value_basis, force the cluster default.
+    3. Specificity tiebreak: prefer the candidate whose longest matching name/alias
+       substring is longer. A 25-char exact match beats a 16-char one — more specific.
+    4. Otherwise return None — fall back to schema-only.
+    """
+    if second is None:
+        return None
+
+    best_id = best.get("kpi_id", "")
+    second_id = second.get("kpi_id", "")
+
+    # Rule 1: both in revenue cluster → default
+    if best_id in REVENUE_CLUSTER and second_id in REVENUE_CLUSTER:
+        catalog = load_kpi_catalog()
+        kpis_by_id = {k["kpi_id"]: k for k in catalog.get("kpis", [])}
+        return kpis_by_id.get(REVENUE_CLUSTER_DEFAULT)
+
+    # Rule 2: specificity tiebreak via longest exact substring match.
+    # A 23-char exact match is far more specific than a 7-char one — use it first
+    # so we don't over-apply the revenue cluster default to clearly-distinguished KPIs.
+    if question:
+        best_len = _longest_match_in_question(best, question)
+        second_len = _longest_match_in_question(second, question)
+        if best_len > second_len:
+            return best
+        if second_len > best_len:
+            return second
+
+    # Rule 3: value_basis mismatch in near-tie → force revenue cluster default.
+    # Only reaches here when specificity cannot break the tie (equal-length matches).
+    best_basis = best.get("value_basis")
+    second_basis = second.get("value_basis")
+    if best_basis and second_basis and best_basis != second_basis:
+        catalog = load_kpi_catalog()
+        kpis_by_id = {k["kpi_id"]: k for k in catalog.get("kpis", [])}
+        return kpis_by_id.get(REVENUE_CLUSTER_DEFAULT)
+
+    return None
 
 
 def match_kpi(question: str, plan) -> KpiMatchDecision:
@@ -165,6 +233,41 @@ def match_kpi(question: str, plan) -> KpiMatchDecision:
             )
 
     if (best_score - second_score) < AMBIGUOUS_MARGIN:
+        # Collect ALL candidates within AMBIGUOUS_MARGIN of the best score.
+        # The 0.99 cap collapses genuinely different-quality matches — use longest
+        # exact substring match across all tied candidates to pick the most specific.
+        within_margin = [k for s, k in ranked if best_score - s < AMBIGUOUS_MARGIN]
+        lm_by_kpi = {k["kpi_id"]: _longest_match_in_question(k, normalized_question) for k in within_margin}
+        max_lm = max(lm_by_kpi.values(), default=0)
+        if max_lm > 0:
+            top_by_lm = [k for k in within_margin if lm_by_kpi[k["kpi_id"]] == max_lm]
+            if len(top_by_lm) == 1:
+                winner = top_by_lm[0]
+                return KpiMatchDecision(
+                    matched=True,
+                    confidence=best_score,
+                    reason=f"Ambiguous match resolved by specificity (longest exact match) to '{winner['kpi_id']}'.",
+                    kpi_id=winner.get("kpi_id"),
+                    status=winner.get("status"),
+                    missing_dependencies=winner.get("missing_dependencies", []),
+                    kpi=winner,
+                )
+
+        second_kpi = ranked[1][1] if len(ranked) > 1 else None
+        resolved = _resolve_ambiguous(best_kpi, second_kpi, normalized_question)
+        if resolved is not None:
+            return KpiMatchDecision(
+                matched=True,
+                confidence=best_score,
+                reason=(
+                    f"Ambiguous match resolved to cluster default '{resolved.get('kpi_id')}'. "
+                    f"Also available: {best_kpi.get('kpi_id')}, {second_kpi.get('kpi_id') if second_kpi else ''}."
+                ),
+                kpi_id=resolved.get("kpi_id"),
+                status=resolved.get("status"),
+                missing_dependencies=resolved.get("missing_dependencies", []),
+                kpi=resolved,
+            )
         return KpiMatchDecision(
             matched=False,
             confidence=best_score,

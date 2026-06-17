@@ -9,17 +9,13 @@ Core requirements:
 
 Grounding and joins:
 - Prefer explicit joins derived from provided foreign keys and join hints.
-- Use table aliases consistently and qualify selected/joined columns. 
+- Use table aliases consistently and qualify selected/joined columns.
 - If fields come from multiple domains, join through valid key paths only.
 
 Aggregation and ranking:
 - For per-entity averages, use two-stage aggregation (entity aggregate, then outer average).
 - Keep GROUP BY minimal and correct.
 - For top-k/ranking requests, order by the correct metric and use LIMIT or ranking functions.
-- If a Metric Resolution block is provided, treat its sql_expression as authoritative.
-- Metric semantics defaults:
-  - "how many tokens traded" => SUM(transactions.quantity)
-  - "how many trades" => COUNT(transactions.transaction_id)
 
 Time handling:
 - If query asks for daily/weekly/monthly outputs, use explicit date bucketing.
@@ -39,7 +35,6 @@ def compose_sql_user_prompt(
     context: str,
     plan_block: str,
     kpi_block: str = "",
-    metric_block: str = "",
 ) -> str:
     return f"""
 {context}
@@ -47,8 +42,6 @@ def compose_sql_user_prompt(
 {plan_block}
 
 {kpi_block}
-
-{metric_block}
 
 User Question:
 {user_query}
@@ -65,18 +58,15 @@ def compose_fix_user_prompt(
     context: str,
     plan_block: str,
     kpi_block: str = "",
-    metric_block: str = "",
 ) -> str:
     return f"""
 The following SQL query failed at execution time.
-  
+
 {context}
 
 {plan_block}
 
 {kpi_block}
-
-{metric_block}
 
 User Question:
 {user_query}
