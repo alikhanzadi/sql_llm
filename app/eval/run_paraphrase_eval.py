@@ -25,6 +25,10 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# Load .env so the embedding matcher can reach OpenAI + Neon (DATABASE_URL).
+from dotenv import load_dotenv  # noqa: E402
+load_dotenv()
+
 from app.llm.planner import plan_query
 from app.llm.kpi_matcher import match_kpi
 from app.rag.catalog.kpi_catalog import load_kpi_catalog
@@ -43,10 +47,36 @@ def _contaminated(question: str, kpi: dict) -> str | None:
     return None
 
 
+NEG_PATH = Path("app/eval/negative_cases.json")
+
+
+def _run_negatives():
+    """Report how many negative (non-KPI) questions correctly abstain (matched=False)."""
+    negs = json.load(open(NEG_PATH))["cases"]
+    abstained, leaked = 0, []
+    for case in negs:
+        q = case["question"]
+        decision = match_kpi(q, plan_query(q))
+        if decision.matched:
+            leaked.append((decision.kpi_id, round(decision.confidence, 3), q))
+        else:
+            abstained += 1
+    print(f"Negatives — correctly abstained: {abstained}/{len(negs)}\n")
+    if leaked:
+        print("Leaked (matched a KPI but should not have):")
+        for kid, conf, q in leaked:
+            print(f"  {kid:<34} sim={conf} | {q}")
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--show-contaminated", action="store_true")
+    ap.add_argument("--negatives", action="store_true", help="report abstention on non-KPI questions")
     args = ap.parse_args(argv)
+
+    if args.negatives:
+        return _run_negatives()
 
     cases = json.load(open(CASES_PATH))["cases"]
     kpis = {k["kpi_id"]: k for k in load_kpi_catalog()["kpis"]}

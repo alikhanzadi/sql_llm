@@ -55,20 +55,47 @@ flowchart TB
     E2 --> E3["kpi_catalog._validate_entry"]
   end
 
+  subgraph S6["6) KPI Embedding Index — offline build"]
+    direction TB
+    F1["embed_kpis.main"] --> F2["embed_kpis.build_embed_text"]
+    F1 --> E1
+    F1 --> F3["OpenAI embeddings.create"]
+    F1 --> F4[("Neon pgvector: kpi_embeddings upsert")]
+  end
+
+  subgraph S7["7) KPI Semantic Retrieval — query time (called from app.llm.kpi_matcher)"]
+    direction TB
+    G1["kpi_matcher.match_kpi"] --> G2["kpi_matcher._embedding_candidates"]
+    G2 --> G3["OpenAI embeddings.create (question)"]
+    G2 --> G4[("Neon pgvector: kpi_embeddings kNN")]
+    G2 --> E1
+    G1 --> G5["kpi_matcher._resolve_candidates"]
+    G2 -. unavailable .-> G6["kpi_matcher._lexical_match_kpi (fallback)"]
+  end
+
   %% Force top-down subsystem ordering between groups.
   A1 --> B1
   B1 --> C1
   C2 --> D1
   D1 --> E1
+  E1 --> F1
+  F4 --> G4
 ```
 
 
 
 ## Notes
 
-- Scope: functions inside `app/rag/*`.
-- Runtime sequence in `main.py` / `ui.py`: `run_ingest()` then `get_retrieval_context(...)`.
-- Query-time retrieval path: `context_service -> retriever -> embeddings/vector_store`.
-- `retriever_experimental.py` is intentionally excluded from the active docs flow.
+- Scope: functions inside `app/rag/*`, plus the KPI semantic-retrieval path in
+  `app/llm/kpi_matcher.py` (included because it is the second RAG path).
+- Two retrieval concerns, two backends today:
+  - schema grounding: `retriever -> Chroma schema_docs` (S3/S4).
+  - KPI routing: `kpi_matcher -> Neon pgvector kpi_embeddings` (S6/S7).
+- Both embed the question with `text-embedding-3-small`. Planned (Phase 1.7): embed the
+  question once and share it, and migrate `schema_docs` to Neon pgvector so there is a
+  single persistent backend (removes the Streamlit cold-start re-embed).
+- `embed_kpis.py` is the offline build that populates `kpi_embeddings` (hash-gated).
+- `kpi_matcher` falls back to its lexical scorer if OpenAI/Neon are unavailable.
+- `retriever_experimental.py` is intentionally excluded (dead/learning code).
 - Static call graph: dynamic/runtime dispatch is not fully represented.
 

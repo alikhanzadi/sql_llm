@@ -1,20 +1,33 @@
-# KPI Processing Flow
+# KPI Processing Flow (current — implemented)
+
+> KPI matching is embedding-first: each canonical KPI is embedded into a Neon `pgvector`
+> table (`kpi_embeddings`); at runtime the question is embedded and the nearest KPIs are
+> retrieved, then resolved by deterministic rules. A lexical scorer is the fallback when
+> OpenAI/Neon are unavailable. The planned unification (single backend, one embedding call,
+> optional LLM judge) is in `kpi_processing_flow_future.md`.
 
 ```mermaid
 flowchart TD
     A[User NL Question] --> B[app/rag/retriever.py<br/>retrieve_relevant_docs()]
-    B --> C[app/rag/embeddings.py<br/>load_schema_docs + format_doc]
+    B --> C[chroma: schema_docs<br/>vector search]
     C --> D[Schema Context Block]
 
     A --> E[app/llm/planner.py<br/>plan_query()]
     E --> F[QueryPlan]
-    F --> G[app/llm/kpi_matcher.py<br/>match_kpi()]
-    G --> H[app/rag/catalog/kpi_catalog.py<br/>load + validate]
-    H --> I[app/rag/catalog/kpi_catalog.json]
 
-    G --> J{KPI decision}
-    J -- no_match --> K[Schema-only prompt]
-    J -- matched_active --> L[Inject Canonical KPI Context]
+    A --> G[app/llm/kpi_matcher.py<br/>match_kpi()]
+    F --> G
+    G --> T[embed question<br/>text-embedding-3-small]
+    T --> U[(Neon pgvector<br/>kpi_embeddings: top-8 kNN)]
+    U --> V[Top-k KPI candidates]
+    V --> W[_resolve_candidates<br/>similarity gate 0.30 · specificity<br/>revenue-cluster default · leaderboard guardrail]
+    W --> J{KPI decision}
+
+    G -. OpenAI/Neon unavailable .-> GL[_lexical_match_kpi<br/>token-overlap fallback]
+    GL --> J
+
+    J -- below_gate / no_match --> K[Schema-only prompt]
+    J -- matched_active --> L[Inject Canonical KPI Context<br/>recipe + value_basis + raw_sql]
     J -- matched_blocked --> M[Return blocked_kpi_message SQL]
 
     D --> K
@@ -24,90 +37,56 @@ flowchart TD
     N --> O[app/llm/generate_sql.py<br/>LLM SQL generation]
     O --> P[SQL output]
 
-    Q[app/eval/planner_kpi_cases.json] --> R[app/eval/run_planner_kpi_eval.py]
-    R --> S[Planner + matcher regression report]
+    H[app/rag/catalog/kpi_catalog.py<br/>load + validate] --> I[app/rag/catalog/kpi_catalog.json]
+    I --> X[app/rag/catalog/embed_kpis.py<br/>build_embed_text + embed, hash-gated]
+    X --> U
+
+    Q1[app/eval/run_sql_correctness_eval.py] --> R1[SQL-correctness report]
+    Q2[app/eval/run_paraphrase_eval.py] --> R2[matcher precision + abstention]
+    Q3[app/eval/run_planner_kpi_eval.py] --> R3[routing regression report]
 ```
 
 ## File Responsibilities
-- `app/llm/planner.py`
-  - Deterministic intent/time-grain/entity extraction.
-  - Handles phrases like `last 7 days` and `past 30 days`.
-
-- `app/llm/kpi_matcher.py`
-  - Scores candidate KPIs using name/alias/example overlap plus planner hints.
-  - Applies threshold/ambiguity/leaderboard guardrails.
-  - Returns `KpiMatchDecision`.
-
-- `app/llm/generate_sql.py`
-  - Orchestrates planner + KPI matcher + prompt assembly.
-  - Handles blocked KPI route with explanatory SQL payload.
-
-- `app/eval/run_planner_kpi_eval.py`
-  - Offline assertion harness for planner and KPI routing behavior.
-
-## What Each File/Function Does
-- `app/rag/retriever.py` (`retrieve_relevant_docs`)
-  - Why: retrieve only relevant schema/metric text for the current question.
-  - What: combines deterministic metric lookup with vector-based table retrieval.
-
-- `app/rag/embeddings.py` (`load_schema_docs`, `format_doc`)
-  - Why: keep schema docs consumable by retrieval and prompting.
-  - What: loads active schema docs, normalizes legacy formats, and formats table/metric text blocks.
-
 - `app/llm/planner.py` (`plan_query`)
-  - Why: add deterministic intent scaffolding before LLM generation.
-  - What: infers `intent`, `time_grain`, `entities`, and ranking hints from NL query text.
+  - Deterministic intent/time-grain/entity extraction; handles `last 7 days`, `past 30 days`.
 
-- `app/llm/kpi_matcher.py` (`match_kpi`, `_score_entry`)
-  - Why: route clear KPI-style questions to canonical KPI definitions.
-  - What: loads validated catalog entries, scores candidates, applies confidence/ambiguity/tier/leaderboard guardrails, and returns `KpiMatchDecision`.
+- `app/llm/kpi_matcher.py` (`match_kpi`, `_embedding_candidates`, `_resolve_candidates`, `_lexical_match_kpi`)
+  - Embeds the question, retrieves top-k KPIs from Neon `pgvector`, applies the similarity
+    gate, then the deterministic resolver (specificity, revenue-cluster default, leaderboard
+    guardrail). Falls back to lexical token-overlap scoring if the vector store is
+    unavailable. Returns `KpiMatchDecision`.
 
-- `app/rag/catalog/kpi_catalog.py` (`load_kpi_catalog`, `validate_kpi_catalog`)
-  - Why: prevent malformed KPI catalog data from entering runtime routing.
-  - What: validates required fields, enums (`status`, `time_grains`, optional `tier`), and active/blocked constraints.
+- `app/rag/catalog/embed_kpis.py`
+  - Offline build of the KPI embedding index in Neon (hash-gated). `embed_text` = name +
+    definition + aliases + example questions, sourced from `kpi_catalog.json`.
 
-- `app/rag/catalog/kpi_catalog.json`
-  - Why: runtime source of truth for canonical KPI semantics.
-  - What: stores KPI definitions, recipes, required joins, aliases, statuses, and missing dependencies.
+- `app/rag/catalog/kpi_catalog.py` / `kpi_catalog.json`
+  - Runtime source of truth and validated entry contract; the content the embeddings derive from.
 
-- `app/llm/prompts.py` (`compose_sql_user_prompt`, `compose_fix_user_prompt`)
-  - Why: keep prompt composition consistent and testable.
-  - What: merges schema context, planner block, and optional KPI block into generation/fix prompts.
+- `app/llm/prompts.py` / `app/llm/generate_sql.py`
+  - Compose schema + plan + KPI block; inject the directive recipe (`value_basis`, filters,
+    `raw_sql`); handle the blocked-KPI route. Unchanged by the embedding upgrade.
 
-- `app/llm/generate_sql.py` (`generate_sql`, `fix_sql`)
-  - Why: orchestrate end-to-end SQL generation and one-pass fix path.
-  - What:
-    - runs planner + KPI matcher,
-    - injects KPI context for active matches,
-    - returns `blocked_kpi_message` SQL for blocked matches,
-    - otherwise executes schema-grounded LLM generation.
-
-- `app/eval/run_planner_kpi_eval.py`
-  - Why: detect routing regressions before runtime quality degrades.
-  - What: validates expected planner output and KPI mapping against case assertions.
-
-- `app/eval/planner_kpi_cases.json`
-  - Why: versioned, human-readable regression scenarios.
-  - What: contains active KPI, blocked KPI, and schema fallback cases with expected routing results.
-
-- `docs/kpi_canonical_list_v1.md`
-  - Why: human-facing explanation of canonical KPIs.
-  - What: mirrors runtime catalog in readable form (not read by matcher at runtime).
-
-- `docs/kpi_inventory_grouped_by_section.md`
-  - Why: requirements traceability by dashboard/leaderboard section.
-  - What: operational inventory with status, calculation, and source mapping.
-
+- `app/eval/run_planner_kpi_eval.py` / `run_sql_correctness_eval.py` / `run_paraphrase_eval.py`
+  - Routing regression; catalog-driven SQL-correctness assertions; held-out matcher precision
+    and abstention.
 
 ## Execution Sequence
-1. Retrieve schema context once via RAG retrieval.
+1. Retrieve schema context once via RAG retrieval (`chroma: schema_docs`).
 2. Build deterministic plan (`intent`, `time_grain`, entities).
-3. Match optional canonical KPI with confidence guardrails.
-4. Compose final prompt (schema + plan + optional KPI block).
-5. Generate SQL or blocked-dependency SQL response.
-6. Evaluate planner/matcher behavior offline via eval harness.
+3. Embed the question; retrieve top-k KPI candidates from Neon `pgvector` (or lexical fallback).
+4. Resolve candidates (similarity gate → specificity / cluster default / guardrail) → `KpiMatchDecision`.
+5. Compose the final prompt (schema + plan + optional KPI block) and generate SQL (or blocked-dependency SQL).
+6. Evaluate matcher precision and SQL correctness offline via the eval harnesses.
 
 ## Important Guardrails
-- KPI layer is optional and must not block broad schema coverage.
+- KPI layer is optional; the similarity gate lets generic questions fall back to schema-only.
 - Blocked KPIs stay explicit (`blocked_by_missing_data`) with dependency messaging.
 - Leaderboard KPIs require ranking intent language.
+- The catalog is flat (no tiers); priority among look-alikes is handled by the resolver.
+- KPI vectors are catalog-derived and env-independent (read from Neon regardless of `DB_ENV`).
+
+## Known limitation
+- The similarity gate rejects out-of-domain questions but cannot separate schema-exploration
+  questions (e.g. "sample the issuers table"), which overlap the KPI band. The planned fix is
+  an LLM judge over the top-k shortlist with a NONE option (see `kpi_processing_flow_future.md`).

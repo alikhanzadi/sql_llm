@@ -70,28 +70,41 @@ Execution order:
 3. Prompt composition in `app/llm/prompts.py`
 4. SQL generation/fix in `app/llm/generate_sql.py`
 
-Matcher guardrails:
-- Confidence threshold: `MATCH_THRESHOLD = 0.58`
-- Ambiguity guard: `AMBIGUOUS_MARGIN = 0.03`
+`match_kpi()` is **embedding-first** with a lexical fallback:
+
+Primary — embedding shortlist:
+1. Embed the question (`text-embedding-3-small`).
+2. Retrieve the `KPI_TOPK = 8` nearest KPIs from the Neon `pgvector` `kpi_embeddings`
+   table (cosine). Recall@8 ≈ 98% on the held-out paraphrase set.
+3. **Similarity gate** `SIMILARITY_GATE = 0.30`: if the top candidate is below it, return
+   schema-only. (Tuned against `paraphrase_cases.json` / `negative_cases.json`. The gate
+   cleanly rejects out-of-domain questions but cannot separate schema-exploration
+   questions, which overlap the KPI band — an LLM judge over the shortlist with a NONE
+   option is the planned fix.)
+4. Resolve among candidates within `SIMILARITY_MARGIN = 0.03` of the top: specificity
+   tiebreak (longest exact name/alias substring in the question) → revenue-cluster default
+   → otherwise the top candidate.
+
+Fallback — lexical (`_lexical_match_kpi`, used when OpenAI/Neon are unavailable):
+- Token-overlap scoring with `MATCH_THRESHOLD = 0.58`, `AMBIGUOUS_MARGIN = 0.03`, and the
+  same specificity/cluster resolution. There is **no tier-based score bias** (removed with
+  the flat-catalog migration).
+
+Guardrails (both paths):
 - Leaderboard guardrail: leaderboard KPIs only match ranking-style questions
   (`requires_ranking` or leaderboard language).
 
-Ambiguity resolution (when candidates fall within `AMBIGUOUS_MARGIN`):
-1. **Specificity tiebreak** — among all candidates within the margin, the one whose
-   longest exact name/alias substring appears in the question wins (handles the 0.99
-   score cap collapsing several strong matches).
-2. **Revenue cluster default** — if the near-tie is inside the revenue cluster
-   (`total_token_revenue`, `issuer_revenue`, `platform_fee_revenue`) or the top two
-   differ in `value_basis`, resolve to the cluster default `total_token_revenue`
-   (bare "revenue").
-3. Otherwise fall back to the schema-only path.
-
-There is **no tier-based score bias** (removed with the flat-catalog migration).
-
 Routing outcomes:
-- **No confident match** -> schema-only path.
-- **Matched + active** -> inject KPI context (`definition`, joins, recipe, `value_basis`).
+- **No confident match / below gate** -> schema-only path.
+- **Matched + active** -> inject KPI context (`definition`, joins, recipe, `value_basis`, `raw_sql`).
 - **Matched + blocked** -> return safe explanatory SQL row (`blocked_kpi_message`) instead of fabricated KPI SQL.
+
+## KPI Embedding Index
+- Table: Neon `kpi_embeddings(kpi_id, section, model, embedding vector(1536), embed_text, content_hash, updated_at)`.
+- Build: `app/rag/catalog/embed_kpis.py` composes `embed_text` (name + definition + aliases +
+  example_questions) per KPI, embeds with `text-embedding-3-small`, and upserts (hash-gated,
+  so only changed KPIs are re-embedded). Re-run after catalog edits.
+- Persistent (survives Streamlit Cloud restarts), unlike a local Chroma store.
 
 ## Current Catalog Snapshot
 Based on current `kpi_catalog.json` (version 2.0.0):
@@ -100,20 +113,18 @@ Based on current `kpi_catalog.json` (version 2.0.0):
 - by section: A 17, B 12, C 22, D 7, E 4
 - `value_basis` in use: `token_revenue_gross`, `issuer_net`, `platform_fee`
 
-## How To Extend Eval Cases (Short)
-Offline harness:
-- Runner: `app/eval/run_planner_kpi_eval.py`
-- Cases: `app/eval/planner_kpi_cases.json`
+## Eval Harnesses
+- `app/eval/run_planner_kpi_eval.py` (+ `planner_kpi_cases.json`) — planner intent/grain
+  and KPI routing regression on canonical-vocabulary questions.
+- `app/eval/run_sql_correctness_eval.py` — catalog-driven, asserts generated SQL uses the
+  required tables/joins/filters/aggregation per KPI (runs the real pipeline).
+- `app/eval/run_paraphrase_eval.py` (+ `paraphrase_cases.json`, `negative_cases.json`) —
+  held-out matcher precision on paraphrases and abstention on non-KPI questions
+  (`--negatives`). Note: the embedding path requires OpenAI + Neon, so run it with the
+  project venv; the bare-env run exercises the lexical fallback.
 
-To add a case:
-1. Add a new object under `cases` with `id` and `question`.
-2. Set expected fields:
-   - `expected_intent`
-   - `expected_time_grain`
-   - `expected_kpi_id` (`null` for schema fallback)
-   - optional `expected_kpi_status`
-3. Run: `python app/eval/run_planner_kpi_eval.py`
-4. Keep both positive (active KPI) and negative (fallback) cases.
+To add a planner routing case: add `{id, question, expected_intent, expected_time_grain,
+expected_kpi_id (null for fallback), optional expected_kpi_status}` and run the runner.
 
 ## Doc Generation (anti-drift)
 - `app/rag/catalog/generate_kpi_docs.py` renders `docs/kpi_inventory_grouped_by_section.md`

@@ -1,0 +1,18 @@
+{
+  "purpose": "Questions that should NOT match any canonical KPI — generic schema/exploration, raw-data peeks, and out-of-domain. Used to tune the embedding similarity gate so the matcher abstains (schema fallback) instead of forcing a wrong KPI.",
+  "how_to_use": ["Run: python app/eval/run_paraphrase_eval.py --negatives"],
+  "cases": [
+    {"question": "List all the tables in the database."},
+    {"question": "What columns does the users table have?"},
+    {"question": "Describe the schema of the transactions table."},
+    {"question": "Show me 10 rows from the tokens table."},
+    {"question": "Give me a sample of the issuers table."},
+    {"question": "What data types are the columns in user_wallet?"},
+    {"question": "List the foreign keys on the transactions table."},
+    {"question": "Show me everything you know about token with id 5."},
+    {"question": "What is the primary key of the identity_verification table?"},
+    {"question": "How do I reset my password?"},
+    {"question": "What is the weather today?"},
+    {"question": "Who is the CEO of the company?"}
+  ]
+}

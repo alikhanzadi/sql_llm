@@ -31,10 +31,13 @@ flowchart TB
 
   LG --> LP["app.llm.planner"]
   LG --> LK["app.llm.kpi_matcher"]
-  LG --> LM["app.llm.metric_resolver"]
   LG --> LPR["app.llm.prompts"]
 
   LK --> KC["app.rag.catalog.kpi_catalog"]
+  LK --> KV[("Neon pgvector: kpi_embeddings")]
+  LK --> OE["OpenAI embeddings (question)"]
+  EK["app.rag.catalog.embed_kpis (offline build)"] --> KV
+  EK --> KC
 
   RE --> DS["app.db.schema"]
   RV --> DS
@@ -47,4 +50,8 @@ flowchart TB
 - Scope: runtime-oriented module dependencies from `app/**/*.py`.
 - Entry layer in this v2 runtime view is the Streamlit app (`app.ui`).
 - Arrow meaning: left module calls/imports and depends on right module.
-- `app.rag.retriever_experimental` is intentionally excluded from runtime v2 graph.
+- `app.llm.kpi_matcher` matches via the embedding shortlist (OpenAI question embedding +
+  Neon `pgvector` `kpi_embeddings`), falling back to its lexical scorer when those are
+  unavailable. `app.rag.catalog.embed_kpis` is the offline build that populates the table.
+- `app.llm.metric_resolver` was removed; its responsibilities are covered by the KPI matcher.
+- `app.rag.retriever_experimental` is intentionally excluded (dead/learning code).
