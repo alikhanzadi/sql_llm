@@ -1,4 +1,4 @@
-# ATHL Analytics Agent
+# ATHL Analytics Agent 
 
 ATHL Analytics Agent is an NL-to-SQL assistant for ATHL data with:
 
