@@ -341,3 +341,31 @@ Docs updated:
 - `docs/kpi_processing_flow_future.md` — re-scoped to Phase 1.7 (embed-once, single pgvector backend, LLM judge).
 
 Verification: all modules compile; catalog validates (62); inventory in sync; planner eval 11/11 (lexical fallback path); paraphrase 72.6% (last embedding run); negatives 5/12 abstain. No temp files left. **Ready to commit Phase 1.6 + docs.**
+
+Committed `51f4125` "Add embedding-shortlist KPI matcher (Neon pgvector)" and pushed. Remote also has `254cb33` "Update Readme.md" (added via GitHub web); pulled to sync. Branch `codex14-v3` = `origin/codex14-v3` = `254cb33`.
+
+---
+
+## RESUME HERE (new session)
+
+**State:** Phase 1 + Phase 1.6 complete, committed & pushed. Branch `codex14-v3` at `254cb33`, clean.
+
+**Done:** flat 62-KPI catalog with `section`/`value_basis`; SQL-correctness eval 62/62; Neon Part F 7/7; embedding-shortlist matcher (Neon pgvector) — paraphrase precision 4.8%→72.6%, canonical routing 11/11; all RAG docs updated.
+
+**Next options (pick one):**
+- **Phase 1.7** — converge the two RAG paths: embed the question once & share it; migrate `schema_docs` to Neon pgvector (one persistent backend, kills Streamlit cold-start re-embed); add an **LLM judge over the top-5** (closes 72.6%→~97% precision AND fixes schema-exploration abstention the gate can't). See `docs/kpi_processing_flow_future.md`.
+- **Phase 2** — conversational chat (multi-turn state, follow-up resolution, correction loop, editable SQL + feedback). See the Phase Roadmap section above (T2.1–T2.5).
+- **Phase 3** — deferred hardening (tests/CI, observability, security, perf).
+
+**Environment gotchas (important):**
+- Embedding/Neon/OpenAI paths need the project venv: `./codex14-venv/bin/python`. System python lacks `openai` → matcher silently uses the lexical fallback (this is the graceful fallback by design).
+- Eval runners that hit embeddings (`run_sql_correctness_eval.py`, `run_paraphrase_eval.py`) call `load_dotenv()` and need `OPENAI_API_KEY` + `DATABASE_URL` in `.env`.
+- Neon `kpi_embeddings` table is populated (62 rows). Re-run `./codex14-venv/bin/python app/rag/catalog/embed_kpis.py` after any catalog edit (hash-gated).
+- After catalog edits also re-run `python app/rag/catalog/generate_kpi_docs.py` and `python app/eval/run_planner_kpi_eval.py`.
+
+**Commands cheat-sheet:**
+- SQL correctness: `./codex14-venv/bin/python app/eval/run_sql_correctness_eval.py`
+- Paraphrase precision: `./codex14-venv/bin/python app/eval/run_paraphrase_eval.py` (`--negatives` for abstention)
+- Routing: `python app/eval/run_planner_kpi_eval.py`
+
+**Note:** `ClaudeC/` is NOT git-tracked (treated like `codex/`). It exists only on this machine — fine for resuming here; commit it if resuming elsewhere.
