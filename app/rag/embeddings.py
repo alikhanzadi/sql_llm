@@ -1,13 +1,34 @@
 # app/rag/embeddings.py
 
-from openai import OpenAI
 import json
 import os
 from typing import Optional
 
 from app.db.schema import get_active_local_schema_docs_path
 
-client = OpenAI()
+_client = None
+
+
+def _get_client():
+    """Lazy OpenAI client so the module imports without the dependency/key."""
+    global _client
+    if _client is None:
+        from openai import OpenAI
+        _client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _client
+
+
+def embed_query(text: str, model: str = "text-embedding-3-small") -> list[float]:
+    """Embed one query string. Shared by schema retrieval and KPI matching."""
+    return _get_client().embeddings.create(model=model, input=text).data[0].embedding
+
+
+def embed_query_safe(text: str, model: str = "text-embedding-3-small") -> Optional[list]:
+    """Embed once for sharing across paths; return None on failure so callers fall back."""
+    try:
+        return embed_query(text, model=model)
+    except Exception:
+        return None
 
 
 def _resolve_schema_path(path: Optional[str] = None) -> str:
@@ -118,17 +139,4 @@ def format_doc(doc):
     Join Hints: {join_hints}
     Time Columns: {time_columns}{details_line}
     """
-
-
-def generate_embeddings(docs):
-    texts = [format_doc(doc) for doc in docs]
-
-    response = client.embeddings.create(
-        model="text-embedding-3-small",
-        input=texts
-    )
-
-    embeddings = [e.embedding for e in response.data]
-
-    return list(zip(texts, embeddings))
 

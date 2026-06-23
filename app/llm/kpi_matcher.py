@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-import os
 import re
 from typing import Optional
 
+from app.db.neon import get_neon_conn, reset_neon_conn
 from app.rag.catalog.kpi_catalog import load_kpi_catalog
+from app.rag.embeddings import embed_query
 
 
 TOKEN_RE = re.compile(r"[a-z0-9_]+")
@@ -31,9 +32,15 @@ KPI_TOPK = 8                # recall@8 ~98% on the held-out paraphrase set
 SIMILARITY_GATE = 0.30
 SIMILARITY_MARGIN = 0.03    # near-tie band for deterministic resolution among candidates
 
-_openai_client = None
-_neon_conn = None
+# LLM judge (1.7c): when the shortlist has no literal name/alias signal (a paraphrase) or the
+# question may be a non-KPI request, ask a cheap model to pick one of the top-5 or NONE. This
+# closes the recall@1 -> recall@5 precision gap AND abstains on schema-exploration questions
+# that overlap the similarity band (the numeric gate cannot separate those). Canonical-vocab
+# questions keep the deterministic fast-path (no judge call), so routing stays 11/11.
+JUDGE_MODEL = "gpt-4o-mini"
+JUDGE_TOPK = 5
 
+_chat_client = None
 
 @dataclass
 class KpiMatchDecision:
@@ -214,46 +221,20 @@ def _resolve_ambiguous(best: dict, second: Optional[dict], question: str = "") -
     return None
 
 
-def _get_openai_client():
-    """Lazy-init the OpenAI client so the module imports without the dependency/key."""
-    global _openai_client
-    if _openai_client is None:
-        from openai import OpenAI
-        _openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    return _openai_client
-
-
-def _get_neon_conn():
-    """Return a cached read-only Neon connection, or None if unavailable."""
-    global _neon_conn
-    if _neon_conn is not None and not getattr(_neon_conn, "closed", 1):
-        return _neon_conn
-    url = os.getenv("DATABASE_URL")
-    if not url:
-        return None
-    import psycopg2
-
-    conn = psycopg2.connect(url, sslmode="require", options="-c statement_timeout=10000")
-    conn.set_session(readonly=True, autocommit=True)
-    _neon_conn = conn
-    return _neon_conn
-
-
 def _vec_literal(vec) -> str:
     """Format an embedding as a pgvector literal."""
     return "[" + ",".join(f"{x:.8f}" for x in vec) + "]"
 
 
-def _embedding_candidates(question: str, k: int = KPI_TOPK):
+def _embedding_candidates(question: str, k: int = KPI_TOPK, query_embedding=None):
     """Return [(similarity, kpi_dict), ...] from the pgvector index, or None on failure.
 
     None signals the caller to fall back to lexical matching (offline / no key / Neon down).
+    A precomputed `query_embedding` (shared with schema retrieval) is used when provided.
     """
-    global _neon_conn
     try:
-        client = _get_openai_client()
-        embedding = client.embeddings.create(model=EMBED_MODEL, input=question).data[0].embedding
-        conn = _get_neon_conn()
+        embedding = query_embedding if query_embedding is not None else embed_query(question, model=EMBED_MODEL)
+        conn = get_neon_conn()
         if conn is None:
             return None
         by_id = {k["kpi_id"]: k for k in load_kpi_catalog().get("kpis", [])}
@@ -269,27 +250,12 @@ def _embedding_candidates(question: str, k: int = KPI_TOPK):
         return candidates or None
     except Exception:
         # Reset a possibly-broken connection and signal lexical fallback.
-        try:
-            if _neon_conn is not None:
-                _neon_conn.close()
-        except Exception:
-            pass
-        _neon_conn = None
+        reset_neon_conn()
         return None
 
 
-def _resolve_candidates(normalized_question: str, plan, candidates) -> KpiMatchDecision:
-    """Pick one KPI from the embedding shortlist using the deterministic resolver."""
-    best_sim, best_kpi = candidates[0]
-
-    if best_sim < SIMILARITY_GATE:
-        return KpiMatchDecision(
-            matched=False,
-            confidence=best_sim,
-            reason=f"Top semantic similarity {best_sim:.3f} below gate; using schema fallback.",
-        )
-
-    # Candidates within the near-tie band of the best similarity.
+def _deterministic_winner(normalized_question: str, candidates, best_sim: float, best_kpi: dict) -> dict:
+    """Resolve the shortlist with the deterministic rules (specificity / cluster / default)."""
     within = [(s, k) for s, k in candidates if best_sim - s < SIMILARITY_MARGIN]
     winner = None
     if len(within) > 1:
@@ -306,6 +272,98 @@ def _resolve_candidates(normalized_question: str, plan, candidates) -> KpiMatchD
                 winner = resolved
     if winner is None:
         winner = best_kpi
+    return winner
+
+
+def _get_chat_client():
+    """Lazy chat client for the LLM judge (kept separate so the module imports without it)."""
+    global _chat_client
+    if _chat_client is None:
+        import os
+        from openai import OpenAI
+        _chat_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    return _chat_client
+
+
+def _llm_judge(question: str, shortlist):
+    """Ask the LLM to pick one KPI id from the shortlist or NONE.
+
+    Returns a (verdict, kpi_id) tuple:
+      ("pick", kpi_id)      - judge chose a valid candidate
+      ("none", None)        - question maps to no candidate (-> schema fallback)
+      ("unavailable", None) - judge could not run (offline / no key / unparseable)
+                              -> caller uses the deterministic winner (graceful degradation)
+    """
+    try:
+        options = "\n".join(
+            f"- {k['kpi_id']}: {k.get('name', '')} - {k.get('business_definition', '')}"
+            for _, k in shortlist
+        )
+        prompt = (
+            "Map the user's analytics question to exactly ONE canonical KPI from the list, "
+            "or answer NONE if the question is not asking for any of them (for example a "
+            "schema/table exploration request or an unrelated question).\n\n"
+            f"Question: {question}\n\n"
+            f"Candidate KPIs:\n{options}\n\n"
+            "Answer with ONLY the kpi_id of the single best match, or NONE. No explanation."
+        )
+        resp = _get_chat_client().chat.completions.create(
+            model=JUDGE_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
+        )
+        ans = (resp.choices[0].message.content or "").strip()
+    except Exception:
+        return ("unavailable", None)
+
+    valid = {k["kpi_id"] for _, k in shortlist}
+    cleaned = ans.strip().strip("`'\"").split()[0] if ans else ""
+    if cleaned in valid:
+        return ("pick", cleaned)
+    # Tolerate minor wrapping (e.g. "The answer is total_token_revenue.").
+    for vid in valid:
+        if vid in ans:
+            return ("pick", vid)
+    if "NONE" in ans.upper():
+        return ("none", None)
+    return ("unavailable", None)
+
+
+def _resolve_candidates(question: str, plan, candidates) -> KpiMatchDecision:
+    """Pick one KPI from the embedding shortlist (deterministic, with an LLM judge for
+    ambiguous / possibly-non-KPI questions)."""
+    normalized_question = _norm(question)
+    best_sim, best_kpi = candidates[0]
+
+    if best_sim < SIMILARITY_GATE:
+        return KpiMatchDecision(
+            matched=False,
+            confidence=best_sim,
+            reason=f"Top semantic similarity {best_sim:.3f} below gate; using schema fallback.",
+        )
+
+    # Canonical-vocab fast-path: any literal KPI name/alias in the question -> trust the
+    # deterministic resolver, no judge call. Paraphrases (no literal signal) -> LLM judge.
+    has_literal = any(
+        _longest_match_in_question(k, normalized_question) > 0 for _, k in candidates
+    )
+
+    reason = f"Semantic match (similarity {best_sim:.3f})."
+    if has_literal:
+        winner = _deterministic_winner(normalized_question, candidates, best_sim, best_kpi)
+    else:
+        verdict, kpi_id = _llm_judge(question, candidates[:JUDGE_TOPK])
+        if verdict == "none":
+            return KpiMatchDecision(
+                matched=False,
+                confidence=best_sim,
+                reason="LLM judge: question maps to no candidate KPI; using schema fallback.",
+            )
+        if verdict == "pick":
+            winner = next(k for _, k in candidates if k["kpi_id"] == kpi_id)
+            reason = f"LLM judge selected '{kpi_id}' from top-{JUDGE_TOPK} (similarity {best_sim:.3f})."
+        else:  # unavailable -> deterministic fallback
+            winner = _deterministic_winner(normalized_question, candidates, best_sim, best_kpi)
 
     # Leaderboard guardrail: only match ranking-style questions.
     if winner.get("category") == "leaderboard":
@@ -320,7 +378,7 @@ def _resolve_candidates(normalized_question: str, plan, candidates) -> KpiMatchD
     return KpiMatchDecision(
         matched=True,
         confidence=best_sim,
-        reason=f"Semantic match (similarity {best_sim:.3f}).",
+        reason=reason,
         kpi_id=winner.get("kpi_id"),
         status=winner.get("status"),
         missing_dependencies=winner.get("missing_dependencies", []),
@@ -328,15 +386,16 @@ def _resolve_candidates(normalized_question: str, plan, candidates) -> KpiMatchD
     )
 
 
-def match_kpi(question: str, plan) -> KpiMatchDecision:
+def match_kpi(question: str, plan, query_embedding=None) -> KpiMatchDecision:
     """Match a question to one canonical KPI via embedding shortlist + deterministic resolver.
 
     Falls back to lexical matching when the vector store / embedding API is unavailable.
+    A precomputed `query_embedding` (shared with schema retrieval) avoids re-embedding.
     """
-    candidates = _embedding_candidates(question)
+    candidates = _embedding_candidates(question, query_embedding=query_embedding)
     if candidates is None:
         return _lexical_match_kpi(question, plan)
-    return _resolve_candidates(_norm(question), plan, candidates)
+    return _resolve_candidates(question, plan, candidates)
 
 
 def _lexical_match_kpi(question: str, plan) -> KpiMatchDecision:

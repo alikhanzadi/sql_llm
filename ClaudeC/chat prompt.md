@@ -28,3 +28,49 @@ We want kpi_canonical to be clean and list-like; the overview is the reader-frie
 Understood and agreed. List all tasks needed before taking any action — include what we just discussed plus tasks 1.1 to 1.3.
 
 ClaudeC documents are not being updated. All phases and sub-phases need to be written there. The table format is good. I don't see updates on the log files.
+
+Yes go ahead, all the tasks approved. (Phase 1.0 execution)
+
+commit for now, whats the message? (Phase 1 checkpoint) / push
+
+go ahead (T1.5 paraphrase eval)
+
+Commit with T1.5 and explain your recommendation — what's the problem and how will you fix it?
+
+Can you create an ERD for your proposed way? So all canonical KPIs are embedded, correct? And other KPIs will be?
+
+What is the source of the embedding? / Yes (proceed with populate)
+
+Before you proceed: Chroma doesn't sustain in Streamlit. Ultimately the correct thing is a cloud vector DB. If we can set it up quick, fire one up; if not, go local for now.
+
+Yes, go step by step. Check before each main step. (pgvector setup)
+
+Before you proceed, make a new diagram based on kpi_processing_flow reflecting the future flow. Just a copy.
+
+ok resume (Step 3 wiring)
+
+Give me a summary of the discussion — what we want to accomplish, what's been done, remaining tasks.
+
+Remind me the steps. Weren't we working on stages and sub-stages? Explain Phase 1 and the embedding upgrade in a paragraph or two.
+
+Yes, proceed (Step 4 gate tuning). Before we commit, make sure all RAG modules are reviewed and all docs updated (e.g. function_call_graph_rag). Also it seems we'll have two RAG paths — schema embedded separately. Is that correct?
+
+go ahead (commit + push Phase 1.6)
+
+Do I need a handoff? I want to resume in a new session.
+
+ClaudeC is in gitignore now. Do we need a handoff to resume in a new chat? Give a summary of goal / done / remaining.
+
+Is claudec_command_log and chat prompt up to date? Did we separate the dashboard from the SQL LLM project — if so did we keep the code and how? (answer only)
+
+--- 2026-06-22 session (Phase 1.7) ---
+
+Read ClaudeC/claudec_work_log.md and ClaudeC/chat prompt.md to resume. Before you proceed, let me know if I should be using "Extra" vs "High" models.
+
+We want to resume with 1.7. Make sure to update the docs in ClaudeC.
+
+[chose option 1 = recommended order] Why do you want metrics as lexical only? Are we removing chroma entirely? I'm not sure what's best. Also there's a Streamlit Cloud gap (I THINK): kpi_matcher/embed_kpis use DATABASE_URL only; query_runner uses st.secrets["postgres_neon"]. If DATABASE_URL isn't in Streamlit secrets the matcher silently falls back to lexical (4.8% vs ~73%). Schema retrieval on Neon will hit the same issue.
+
+[1.7a-3 go?] Yes, full removal now.
+
+[1.7c judge trigger] Ambiguous-only (recommended).

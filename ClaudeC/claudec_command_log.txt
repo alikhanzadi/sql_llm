@@ -516,3 +516,169 @@ Negatives correctly abstained: 5/12  (7 leaks = schema-exploration, as predicted
 $ python -m py_compile <changed modules> ; catalog validate ; generate_kpi_docs ; planner eval
 COMPILE OK ; 62 KPIs ; inventory in sync ; Passed 11 Failed 0 ; no temp files
 [exit 0]
+
+=== Commit + push Phase 1.6 + docs ===
+
+$ git add <kpi_matcher, embed_kpis, run_paraphrase_eval, negative_cases, 5 docs> ; git commit
+[codex14-v3 51f4125] Add embedding-shortlist KPI matcher (Neon pgvector)
+[exit 0]
+
+$ git push
+! rejected (non-fast-forward) — remote advanced
+$ git fetch origin
+   51f4125..254cb33  codex14-v3 -> origin/codex14-v3   # remote had "Update Readme.md"
+$ git rev-list --left-right --count codex14-v3...origin/codex14-v3
+0   1   # local 0 ahead, 1 behind -> clean fast-forward
+$ git pull --ff-only
+Updating 51f4125..254cb33  Fast-forward (Readme.md)
+# local = origin = 254cb33, tree clean. All Phase 1/1.6 work committed + pushed.
+[exit 0]
+
+=== ClaudeC tracking / dashboard status check ===
+
+$ git check-ignore ClaudeC ; git ls-files ClaudeC/ ; grep -ni claudec .gitignore
+# ClaudeC is TRACKED (3 files committed). .gitignore has "claudec/" (lowercase) at line 17
+# -> does NOT match folder "ClaudeC/" (git case-sensitive), and ignore can't untrack anyway.
+# Uncommitted: .gitignore (M), ClaudeC/claudec_work_log.md (M).
+[exit 0]
+
+$ grep -nE "render_executive_dashboard|_executive_dashboard_data|_load_static_table|Executive Dashboard" app/ui.py
+# Dashboard code fully intact in app/ui.py (252,328,742,1209,1223). Never separated.
+[exit 0]
+
+Command log continued: 2026-06-22 — Phase 1.7a (single pgvector backend)
+
+=== 1.7a-1: shared Neon resolver + secrets-gap fix ===
+
+$ ./codex14-venv/bin/python -c "resolver + matcher smoke"
+get_neon_dsn -> Neon DSN resolved
+get_neon_conn -> connected
+kpi_embeddings rows: 62
+match: platform_fee_revenue | matched: True | conf: 0.439  # embedding path (Semantic match)
+[exit 0]
+
+$ ./codex14-venv/bin/python app/eval/run_planner_kpi_eval.py
+Total: 11  Passed: 11  Failed: 0   # routing intact via embedding path
+[exit 0]
+
+$ python3 -c "import app.llm.kpi_matcher, app.db.neon"
+imports OK (system python)   # lexical fallback path still imports without openai
+[exit 0]
+
+=== 1.7a-2: schema_embeddings build (Neon pgvector) ===
+
+$ ./codex14-venv/bin/python app/rag/catalog/embed_schema.py --dry-run
+13 table docs would be embedded with text-embedding-3-small (dim 1536).
+[exit 0]
+
+$ ./codex14-venv/bin/python app/rag/catalog/embed_schema.py
+13 table docs; 13 need (re)embedding; 0 stale rows to delete.
+Done. schema_embeddings now has 13 rows.
+[exit 0]
+
+$ ./codex14-venv/bin/python -c "pgvector schema top-k recall check"
+# top hit per question (all correct):
+#   "tokens did each issuer sell" -> tokens (0.532)
+#   "completed transactions amounts" -> transactions (0.474)
+#   "verified their identity" -> identity_verification (0.550)
+#   "in a user's wallet" -> user_wallet (0.624)
+#   "athletes sport and team" -> athlete_profile (0.492)
+[exit 0]
+
+=== 1.7a-3: retriever -> pgvector; remove Chroma entirely ===
+
+$ rm app/rag/vector_store.py app/rag/ingest.py app/rag/retriever_experimental.py
+# deleted 3 Chroma-coupled files
+[exit 0]
+
+$ grep -rn "vector_store|retriever_experimental|run_ingest|generate_embeddings|chromadb|get_chroma|get_collection|store_embeddings" app --include=*.py
+CLEAN — no references
+[exit 0]
+
+$ ./codex14-venv/bin/python -c "retriever end-to-end + lexical fallback"
+pgvector path -> tables: transactions, issuer_daily_revenue, tokens, issuer_post_signup, issuers, issuer_preferences
+lexical fallback -> tables: transactions, issuer_daily_revenue
+[exit 0]
+
+$ ./codex14-venv/bin/python app/eval/run_planner_kpi_eval.py
+Total: 11  Passed: 11  Failed: 0
+[exit 0]
+
+$ ./codex14-venv/bin/python -c "import app.rag.retriever, app.rag.embeddings, app.main, app.rag.catalog.embed_schema"
+all imports OK   # lazy OpenAI -> bare imports safe
+[exit 0]
+
+# requirements.txt: removed chromadb==1.5.5
+# main.py / ui.py: removed run_ingest() calls + import; main.py: removed stale TEMP comments
+# 1.7a (single pgvector backend) COMPLETE.
+
+=== 1.7b: embed the question once, share across both paths ===
+
+$ ./codex14-venv/bin/python -c "embed-once proof (fake client counts create calls)"
+embedding.create calls (expect 1): 1   # was 2 (retriever + matcher)
+[exit 0]
+
+$ ./codex14-venv/bin/python -c "real shared-embedding smoke"
+shared embedding dim: 1536
+matcher: total_token_revenue | matched: True | Semantic match (similarity 0.729)
+schema tables: transactions, tokens, issuer_daily_revenue, user_token_wallet
+[exit 0]
+
+$ python3 -c "import app.llm.kpi_matcher, app.rag.retriever, app.rag.embeddings, app.rag.context_service, app.llm.generate_sql"
+RAG + generate_sql bare imports OK   # lexical fallback path imports without openai
+[exit 0]
+
+$ python3 app/eval/run_planner_kpi_eval.py        # bare = lexical
+Total: 11  Passed: 11  Failed: 0
+$ ./codex14-venv/bin/python app/eval/run_planner_kpi_eval.py   # venv = embedding
+Total: 11  Passed: 11  Failed: 0
+[exit 0]
+
+$ ./codex14-venv/bin/python app/eval/run_paraphrase_eval.py
+Precision: 45/62 = 72.6%   wrong-KPI: 17   fallback: 0
+# identical to pre-refactor -> 1.7a+1.7b zero regression; pre-judge baseline
+# main.py: removed dead `from openai import OpenAI`; kpi_matcher: removed unused `import os`
+# 1.7b (embed-once) COMPLETE.
+
+=== 1.7c: LLM judge over top-5 (ambiguous-only trigger) ===
+
+$ python3 -c "import app.llm.kpi_matcher"
+kpi_matcher bare import OK   # lazy judge client -> no openai needed at import
+[exit 0]
+
+$ ./codex14-venv/bin/python app/eval/run_planner_kpi_eval.py
+Total: 11  Passed: 11  Failed: 0   # canonical fast-path + schema-fallback unperturbed
+[exit 0]
+
+$ ./codex14-venv/bin/python app/eval/run_paraphrase_eval.py
+Precision: 58/62 = 93.5%   wrong-KPI: 3   fallback: 1   # was 72.6%
+# remaining: near-synonyms (platform_fee vs total_revenue; activation vs launch_success;
+#   concentration vs top_issuer_share) + buyer_to_seller_ratio (outside top-5)
+[exit 0]
+
+$ ./codex14-venv/bin/python app/eval/run_paraphrase_eval.py --negatives
+Negatives — correctly abstained: 12/12   # was 5/12 (judge NONE catches schema-exploration)
+[exit 0]
+
+# Phase 1.7 COMPLETE: single pgvector backend, embed-once (2->1), LLM judge.
+# Paraphrase 72.6%->93.5%; negatives 5/12->12/12; routing 11/11.
+
+=== SQL-correctness regression check (Phase 1.7) ===
+
+$ ./codex14-venv/bin/python app/eval/run_sql_correctness_eval.py
+Core pass: 61/62   errors: 0
+FAIL [D] revenue_concentration  - tables: missing tables: ['issuers']
+
+# Diagnosed: matcher matches revenue_concentration via DETERMINISTIC fast-path (literal alias
+# "revenue concentration") -> judge NOT involved -> not a 1.7 regression. Root cause: catalog
+# metadata claims a join to `issuers` (for issuer_type dimension) that the authoritative raw_sql
+# recipe never uses (computes top-5 share purely from issuer_daily_revenue). Same "required_tables
+# = needed-to-compute, not decorative" principle the prior session ratified for sibling KPIs.
+
+# Catalog fix: revenue_concentration required_tables ['issuer_daily_revenue','issuers'] ->
+#   ['issuer_daily_revenue']; dropped issuers.issuer_type column + the required_join.
+$ ./codex14-venv/bin/python -c "load_kpi_catalog()"
+OK: 62 KPIs loaded, version 2.0.0
+$ ./codex14-venv/bin/python app/eval/run_sql_correctness_eval.py --kpi revenue_concentration
+PASS [D] revenue_concentration   Core pass: 1/1
+# Full SQL-correctness now 62/62 (61 others passed in the full run; isolated one-KPI fix).

@@ -87,7 +87,12 @@ def main(argv=None):
     import psycopg2
     from openai import OpenAI
 
-    conn = psycopg2.connect(os.environ["DATABASE_URL"], sslmode="require")
+    from app.db.neon import get_neon_dsn
+
+    dsn = get_neon_dsn()
+    if not dsn:
+        raise SystemExit("No Neon DSN: set DATABASE_URL or st.secrets[postgres_neon].")
+    conn = psycopg2.connect(dsn, sslmode="require")
     conn.autocommit = True
     cur = conn.cursor()
 

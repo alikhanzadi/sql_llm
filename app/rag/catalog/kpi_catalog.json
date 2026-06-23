@@ -3115,17 +3115,13 @@
         "issuer_type"
       ],
       "required_tables": [
-        "issuer_daily_revenue",
-        "issuers"
+        "issuer_daily_revenue"
       ],
       "required_columns": [
         "issuer_daily_revenue.issuer_id",
-        "issuer_daily_revenue.total_amount_usdc",
-        "issuers.issuer_type"
+        "issuer_daily_revenue.total_amount_usdc"
       ],
-      "required_joins": [
-        "issuer_daily_revenue.issuer_id = issuers.issuer_id"
-      ],
+      "required_joins": [],
       "filters_defaults": [],
       "sql_recipe": {
         "pattern": "raw_sql",

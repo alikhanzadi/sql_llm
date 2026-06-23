@@ -1,101 +1,98 @@
 # RAG Function Call Graph
 
-This diagram focuses on function-level calls within `app/rag/*`.
+This diagram focuses on function-level calls within `app/rag/*`, plus the shared Neon
+resolver (`app/db/neon.py`) and the KPI semantic-retrieval path in `app/llm/kpi_matcher.py`.
 
 ```mermaid
 flowchart TB
-  %% Ordered by runtime sequence: startup ingest -> query retrieval -> optional modules
+  %% Single Neon pgvector backend; the question is embedded once and shared.
 
-  subgraph S1["1) Startup Ingestion (runs first in main/ui)"]
+  subgraph S0["0) Shared Neon resolver (app/db/neon.py)"]
     direction TB
-    A1["ingest.run_ingest"] --> A2["ingest._log_startup_once"]
-    A2 --> A3["embeddings.get_active_schema_path"]
-    A2 --> A4["vector_store.get_chroma_mode"]
-    A1 --> A5["embeddings.load_schema_docs"]
-    A5 --> A6["ingest.compute_schema_hash"]
-    A6 --> A7["ingest.has_schema_changed"]
-    A7 --> A8["ingest._state_file"]
-    A7 --> A9["embeddings.generate_embeddings"]
-    A9 --> A10["vector_store.get_chroma_client"]
-    A10 --> A11["vector_store.get_collection"]
-    A11 --> A12["vector_store.store_embeddings"]
-    A12 --> A13["ingest.save_hash"]
-    A13 --> A8
+    N1["get_neon_dsn  (DATABASE_URL or st.secrets[postgres_neon])"]
+    N2["get_neon_conn  (cached read-only)"] --> N1
+    N3["reset_neon_conn"]
   end
 
-  subgraph S2["2) Embeddings + Vector Store Internals"]
+  subgraph S1["1) Shared question embedding (app/rag/embeddings.py)"]
     direction TB
-    B1["embeddings.get_active_schema_path"] --> B2["embeddings._resolve_schema_path"]
-    B3["embeddings.load_schema_docs"] --> B2
-    B3 --> B4["embeddings._normalize_docs"]
-    B5["embeddings.generate_embeddings"] --> B6["embeddings.format_doc"]
-    B7["vector_store.get_collection"] --> B8["vector_store._collection_name"]
-    B7 --> B9["vector_store.get_chroma_client"]
-    B9 --> B10["vector_store._is_ephemeral_env"]
-    B11["vector_store.get_chroma_mode"] --> B10
+    A1["embed_query_safe"] --> A2["embed_query"]
+    A2 --> A3["_get_client  (lazy OpenAI)"]
+    A2 --> A4["OpenAI embeddings.create (question)"]
   end
 
-  subgraph S3["3) Query-Time Retrieval Context (runs after ingest)"]
+  subgraph S2["2) Query-Time Retrieval Context"]
     direction TB
     C1["context_service.get_retrieval_context"] --> C2["retriever.retrieve_relevant_docs"]
     C1 --> C3["context_service.build_context"]
   end
 
-  subgraph S4["4) Retriever Query Flow"]
+  subgraph S3["3) Retriever Query Flow (schema grounding)"]
     direction TB
     D1["retriever.retrieve_relevant_docs"] --> D2["embeddings.load_schema_docs"]
     D1 --> D3["embeddings.format_doc"]
-    D1 --> D4["vector_store.get_collection"]
-    D1 --> D5["vector_store.query_collection"]
+    D1 --> D4["retriever._pgvector_table_docs"]
+    D4 --> A2
+    D4 --> N2
+    D4 --> D5[("Neon pgvector: schema_embeddings kNN")]
+    D1 -. unavailable .-> D6["retriever._lexical_table_docs (fallback)"]
   end
 
-  subgraph S5["5) KPI Catalog Utilities (used by matcher layer)"]
+  subgraph S4["4) KPI Catalog Utilities"]
     direction TB
     E1["kpi_catalog.load_kpi_catalog"] --> E2["kpi_catalog.validate_kpi_catalog"]
     E2 --> E3["kpi_catalog._validate_entry"]
   end
 
-  subgraph S6["6) KPI Embedding Index — offline build"]
+  subgraph S5["5) Offline embedding builds (hash-gated)"]
     direction TB
     F1["embed_kpis.main"] --> F2["embed_kpis.build_embed_text"]
     F1 --> E1
-    F1 --> F3["OpenAI embeddings.create"]
-    F1 --> F4[("Neon pgvector: kpi_embeddings upsert")]
+    F1 --> N1
+    F1 --> F3[("Neon pgvector: kpi_embeddings upsert")]
+    H1["embed_schema.main"] --> H2["embeddings.format_doc"]
+    H1 --> N1
+    H1 --> H3[("Neon pgvector: schema_embeddings upsert")]
   end
 
-  subgraph S7["7) KPI Semantic Retrieval — query time (called from app.llm.kpi_matcher)"]
+  subgraph S6["6) KPI Semantic Retrieval — query time (app.llm.kpi_matcher)"]
     direction TB
     G1["kpi_matcher.match_kpi"] --> G2["kpi_matcher._embedding_candidates"]
-    G2 --> G3["OpenAI embeddings.create (question)"]
+    G2 --> A2
+    G2 --> N2
     G2 --> G4[("Neon pgvector: kpi_embeddings kNN")]
     G2 --> E1
     G1 --> G5["kpi_matcher._resolve_candidates"]
+    G5 --> G7["_deterministic_winner  (literal signal -> fast-path)"]
+    G5 --> G8["_llm_judge  (no literal signal -> gpt-4o-mini, pick/NONE)"]
+    G8 --> G9["_get_chat_client (lazy OpenAI)"]
     G2 -. unavailable .-> G6["kpi_matcher._lexical_match_kpi (fallback)"]
   end
 
-  %% Force top-down subsystem ordering between groups.
-  A1 --> B1
-  B1 --> C1
+  %% Cross-subsystem ordering
+  A2 --> C2
   C2 --> D1
   D1 --> E1
-  E1 --> F1
-  F4 --> G4
+  F3 --> G4
+  H3 --> D5
 ```
-
-
 
 ## Notes
 
-- Scope: functions inside `app/rag/*`, plus the KPI semantic-retrieval path in
-  `app/llm/kpi_matcher.py` (included because it is the second RAG path).
-- Two retrieval concerns, two backends today:
-  - schema grounding: `retriever -> Chroma schema_docs` (S3/S4).
-  - KPI routing: `kpi_matcher -> Neon pgvector kpi_embeddings` (S6/S7).
-- Both embed the question with `text-embedding-3-small`. Planned (Phase 1.7): embed the
-  question once and share it, and migrate `schema_docs` to Neon pgvector so there is a
-  single persistent backend (removes the Streamlit cold-start re-embed).
-- `embed_kpis.py` is the offline build that populates `kpi_embeddings` (hash-gated).
-- `kpi_matcher` falls back to its lexical scorer if OpenAI/Neon are unavailable.
-- `retriever_experimental.py` is intentionally excluded (dead/learning code).
+- **Single backend now.** Both retrieval concerns read from Neon `pgvector`:
+  - schema grounding: `retriever -> schema_embeddings` (S3).
+  - KPI routing: `kpi_matcher -> kpi_embeddings` (S6).
+- **One embedding per question.** The orchestration calls `embed_query_safe` once and threads
+  the vector into both paths (`query_embedding` argument); each path embeds itself only if no
+  vector is supplied (e.g. the eval runners).
+- **Shared Neon resolver** `app/db/neon.py` (S0) resolves credentials from `DATABASE_URL` or
+  `st.secrets["postgres_neon"]`, so the pgvector layer works in CLI and on Streamlit Cloud.
+- **LLM judge** runs only when the shortlist has no literal name/alias signal (paraphrase) or
+  may be a non-KPI question; it returns a pick or NONE (schema fallback). Canonical-vocab
+  questions stay on `_deterministic_winner` with no LLM call.
+- `embed_kpis.py` / `embed_schema.py` are the offline, hash-gated builds.
+- Graceful degradation: `retriever` and `kpi_matcher` fall back to lexical scoring if
+  OpenAI/Neon are unavailable; the judge falls back to the deterministic winner.
+- **Removed in Phase 1.7**: `app/rag/ingest.py`, `app/rag/vector_store.py` (Chroma), and
+  `app/rag/retriever_experimental.py` were deleted; `chromadb` dropped from requirements.
 - Static call graph: dynamic/runtime dispatch is not fully represented.
-

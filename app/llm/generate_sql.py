@@ -51,10 +51,13 @@ def _get_client():
     return _client
 
 
-def build_sql_planning_context(user_query: str) -> SqlPlanningContext:
-    """Compute deterministic planning context once for generate and retry paths."""
+def build_sql_planning_context(user_query: str, query_embedding=None) -> SqlPlanningContext:
+    """Compute deterministic planning context once for generate and retry paths.
+
+    A precomputed `query_embedding` (shared with schema retrieval) avoids re-embedding.
+    """
     plan = plan_query(user_query)
-    kpi_decision = match_kpi(user_query, plan)
+    kpi_decision = match_kpi(user_query, plan, query_embedding=query_embedding)
     return SqlPlanningContext(
         plan=plan,
         kpi_decision=kpi_decision,

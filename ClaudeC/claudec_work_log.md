@@ -350,6 +350,10 @@ Committed `51f4125` "Add embedding-shortlist KPI matcher (Neon pgvector)" and pu
 
 **State:** Phase 1 + Phase 1.6 complete, committed & pushed. Branch `codex14-v3` at `254cb33`, clean.
 
+**Scope (important):**
+- IN scope: the NL→SQL **agent / chat pipeline** — KPI comprehension (matcher, embeddings) and SQL correctness (catalog, recipes, evals). All phases (1, 1.6, 1.7, 2, 3) are about this path.
+- OUT of scope (current): the **executive dashboard UI** in `app/ui.py` (`render_executive_dashboard`, `_executive_dashboard_data`, `_load_static_table`). It is intact and untouched; it computes its numbers in pandas from **static CSVs**, not via the agent/live-DB pipeline. We have NOT modified, moved, or separated it. The "north star executive dashboard" appears in the docs only as the **source** of the canonical KPI list — not as work being done here. (Splitting dashboard vs agent runtimes is a deferred item from the older `codex/codex_work_log.md`, not planned in these phases.)
+
 **Done:** flat 62-KPI catalog with `section`/`value_basis`; SQL-correctness eval 62/62; Neon Part F 7/7; embedding-shortlist matcher (Neon pgvector) — paraphrase precision 4.8%→72.6%, canonical routing 11/11; all RAG docs updated.
 
 **Next options (pick one):**
@@ -369,3 +373,89 @@ Committed `51f4125` "Add embedding-shortlist KPI matcher (Neon pgvector)" and pu
 - Routing: `python app/eval/run_planner_kpi_eval.py`
 
 **Note:** `ClaudeC/` is NOT git-tracked (treated like `codex/`). It exists only on this machine — fine for resuming here; commit it if resuming elsewhere.
+
+## 2026-06-22: Phase 1.7 — RAG convergence (single backend, embed-once, LLM judge)
+
+### Task Intro
+
+Converge the two RAG paths into one. Today the question is embedded **twice** (`retriever.py` for schema via Chroma; `kpi_matcher.py` for KPIs via Neon pgvector) across **two backends** (Chroma is rebuilt on every Streamlit cold start; pgvector is persistent). Phase 1.7 (per `docs/kpi_processing_flow_future.md`) unifies this.
+
+Agreed sequencing (user picked **option 1 = recommended order**): **1.7a single backend → 1.7b embed-once → 1.7c LLM judge.** Check in between sub-steps; keep ClaudeC logs updated.
+
+Decisions ratified this session:
+- **Remove Chroma entirely.** After 1.7a nothing in the live path uses Chroma: delete `vector_store.py`, drop the `run_ingest()` cold-start rebuild, remove the dead `retriever_experimental.py`, and drop `chromadb` from requirements.
+- **Schema embeddings = the 13 table docs only** (the actual vector-search surface; `retriever.py:150` filters vector hits to `Table:` docs). The 30 legacy **metric docs stay lexical** (status-quo behavior). Flagged for a *separate* review: those metric docs predate the 62-KPI canonical catalog and likely overlap/conflict — retire/fold/embed is a future decision, NOT in 1.7.
+- **`KpiMatchDecision` unchanged** → `generate_sql`/`ui` interfaces don't move.
+
+### Prerequisite finding (user-caught): Streamlit Cloud secrets gap
+
+`_apply_secrets_to_env()` (`app/ui.py:219`) bridges only `OPENAI_API_KEY` + `DB_ENV` into `os.environ`. The cloud secrets template (`app/ui.py` help text) defines a `[postgres_neon]` section but **no top-level `DATABASE_URL`**, and Streamlit secrets never auto-populate `os.environ`. Consequences in the cloud:
+- `query_runner.PostgresClient` reads `st.secrets["postgres_neon"]` → query **execution works**.
+- `kpi_matcher._get_neon_conn()` / `embed_kpis` read `os.getenv("DATABASE_URL")` → **None** → matcher silently falls to lexical (**4.8%** paraphrase precision instead of ~73%).
+- 1.7a would extend the same break to schema retrieval (also Neon).
+
+**Fix (prerequisite, folded into 1.7a):** a **shared Neon resolver** — `DATABASE_URL` env → else construct a DSN from `st.secrets["postgres_neon"]` — used by the matcher, the new schema-retriever, and the embed scripts. One credential path; the pgvector layer works wherever query execution does. Note: `DATABASE_URL` in `.env` points to **Neon** (their convention); `LOCAL_DATABASE_URL`/`POSTGRES_*` are the local DB. pgvector tables (`kpi_embeddings`, `schema_embeddings`) live in Neon regardless of `DB_ENV`.
+
+### 1.7a sub-breakdown (executing)
+
+| ID | Task | Status |
+|---|---|---|
+| 1.7a-1 | Shared Neon resolver (`app/db/` ); close the secrets gap; repoint `kpi_matcher` to it | ✅ done |
+| 1.7a-2 | Neon DDL `schema_embeddings` (pgvector) + hash-gated `embed_schema.py` + populate (13 table docs) | ✅ done |
+| 1.7a-3 | Repoint `retriever` to pgvector; remove Chroma entirely (vector_store, ingest/run_ingest, retriever_experimental, chromadb dep) | ✅ done |
+
+### 1.7a-1 + 1.7a-2 results
+
+- **`app/db/neon.py`** (new) — shared Neon resolver. `get_neon_dsn()`: `DATABASE_URL` → else DSN built from `st.secrets["postgres_neon"]` (url-encoded). `get_neon_conn()`: cached read-only conn for runtime reads; `reset_neon_conn()` for broken-conn recovery. Closes the Streamlit secrets gap at the source.
+- **`kpi_matcher.py`** — dropped its private `_neon_conn`/`_get_neon_conn`; now uses `get_neon_conn`/`reset_neon_conn`. **`embed_kpis.py`** — writer conn now via `get_neon_dsn()`.
+- **`app/rag/catalog/embed_schema.py`** (new) — hash-gated build mirroring `embed_kpis.py`; self-contained idempotent DDL (`CREATE TABLE IF NOT EXISTS schema_embeddings`). Embeds the **13 table docs** (embed_text = `format_doc(doc)`, i.e. the exact block the retriever returns as context). Neon `schema_embeddings` populated: **13 rows**.
+- Verification: resolver connects; matcher stays on the embedding path (`Semantic match` reason); **routing eval 11/11** via embedding path; bare system-python imports OK (lexical fallback intact). pgvector schema top-k returns the correct top table for 5/5 representative questions (tokens, transactions, identity_verification, user_wallet, athlete_profile).
+
+### 1.7a-3 results (user green-lit full Chroma removal)
+
+- **`retriever.py`** rewritten: schema retrieval now queries Neon `schema_embeddings` (pgvector kNN, no token filter — semantic rank already orders) via `_pgvector_table_docs`; lexical metric-doc matching unchanged; new `_lexical_table_docs` offline fallback (token-overlap) when Neon/OpenAI unavailable.
+- **`embeddings.py`**: removed module-level `OpenAI()`; added lazy `_get_client()` + shared `embed_query()` (sets up 1.7b); deleted dead `generate_embeddings()`.
+- **Deleted**: `app/rag/vector_store.py`, `app/rag/ingest.py`, `app/rag/retriever_experimental.py`. **Removed** `run_ingest()` calls from `main.py` + `ui.py` and stale TEMP comments in `main.py`. **Dropped** `chromadb==1.5.5` from `requirements.txt`.
+- Verification: `grep` for chroma/vector_store/ingest/retriever_experimental/generate_embeddings across `app/` → **CLEAN**. pgvector retrieval returns relevant tables (e.g. issuer-revenue Q → transactions, issuer_daily_revenue, tokens, issuers…); lexical fallback returns correct tables; **routing eval 11/11**; all entrypoints import (`app.main`, retriever, embeddings, embed_schema) without instantiating OpenAI. SQL-correctness eval unaffected (bypasses retriever).
+
+**1.7a (single pgvector backend) COMPLETE.** Note: orphaned local `chroma_db/` dir + `schema_hash_*` state files are now dead (ingest deleted) — harmless local artifacts (`chroma_db` is gitignored, won't be staged).
+
+### 1.7b — Embed the question once, share across both paths (COMPLETE)
+
+Goal: eliminate the duplicate embedding call (schema retrieval + KPI matching embedded the same question separately).
+
+- **`embeddings.py`**: added `embed_query_safe()` (returns None on failure → callers fall back).
+- Threaded an optional precomputed `query_embedding` (default `None` = compute yourself → backward-compatible) through: `match_kpi` → `_embedding_candidates`; `retrieve_relevant_docs` → `_pgvector_table_docs`; `get_retrieval_context`; `build_sql_planning_context`.
+- **`kpi_matcher.py`**: dropped its private `_openai_client`/`_get_openai_client`; now embeds via shared `embed_query`; removed now-unused `import os`.
+- **Orchestration** (`main.py`, `ui.py`): compute `query_embedding = embed_query_safe(q)` **once**, pass to both `get_retrieval_context(...)` and `build_sql_planning_context(...)`. Also removed a dead `from openai import OpenAI` in `main.py`.
+- Eval runners + `generate_sql` internal retry calls unchanged (use the `None` default).
+
+Verification: **embed-once proven** — instrumented count = **1** `embeddings.create` call on the full orchestration path (was 2). Real shared-embedding smoke: `"total token revenue"` → `total_token_revenue` matched via embedding (sim 0.729), schema tables correct. **Routing eval 11/11** (embedding path) and 11/11 (bare-python lexical fallback). RAG modules + `generate_sql` import bare (no openai). **Paraphrase precision 45/62 = 72.6% — identical to pre-refactor (zero regression); this is the pre-judge baseline.** 17 wrong-KPI = semantic-sibling confusions (the 1.7c judge target).
+
+### 1.7c — LLM judge over top-5 (COMPLETE)
+
+User chose **ambiguous-only** triggering. Implementation (`kpi_matcher.py`):
+- Extracted `_deterministic_winner()` (the prior specificity/cluster/default resolution).
+- Added `_llm_judge(question, top-5)` → returns `("pick", kpi_id)` / `("none", None)` / `("unavailable", None)`. `gpt-4o-mini`, temperature 0, lazy `_get_chat_client()` (judge never breaks bare import / offline). Tolerates wrapped answers; scans for any valid id; `NONE` → abstain.
+- Rewired `_resolve_candidates`: below-gate still abstains (no call). Above gate, **`has_literal`** (any literal KPI name/alias substring in the question) → deterministic fast-path, **no judge call** (canonical vocab stays free, routing 11/11). No literal signal (paraphrase) → judge over top-5: `pick` → that KPI; `none` → schema fallback (catches schema-exploration the gate can't); `unavailable` → deterministic winner (graceful degradation). Leaderboard guardrail still applies after the pick. `match_kpi` now passes the raw question (judge wants natural text).
+
+Results:
+- **Paraphrase precision 72.6% → 93.5%** (58/62). Remaining 4 are at/below the recall@5 ceiling: 3 genuine near-synonyms (`platform_fee_revenue` vs `total_token_revenue`; `issuer_activation_rate` vs `token_launch_success_rate`; `revenue_concentration` vs `top_issuer_revenue_share`) + `buyer_to_seller_ratio` (the one paraphrase outside top-5, so the judge never sees it).
+- **Negatives abstention 5/12 → 12/12** — every non-KPI question (incl. schema-exploration) now abstains via judge `NONE`.
+- **Routing eval 11/11** (canonical fast-path + schema-fallback negatives unperturbed). Bare import OK.
+- SQL-correctness eval: full run was 61/62 — one FAIL on `revenue_concentration` ("missing `issuers`"). **Diagnosed as NOT a 1.7 regression**: the matcher matches it via the deterministic fast-path (literal alias "revenue concentration"), so the judge is not involved. Root cause = pre-existing catalog inconsistency: `required_tables`/`required_joins` claimed a decorative join to `issuers` (for the `issuer_type` dimension) that the authoritative `raw_sql` recipe never uses (top-5 share computed purely from `issuer_daily_revenue`). The 1.3 directive raw_sql injection makes the LLM follow the recipe exactly, correctly omitting `issuers`. **Catalog fix** (same "required_tables = needed-to-compute, not decorative" principle ratified earlier): `revenue_concentration.required_tables` → `["issuer_daily_revenue"]`, dropped `issuers.issuer_type` column + the `required_joins` entry. Catalog validates (62); `revenue_concentration` now PASSes → **SQL-correctness back to 62/62**. (embed_text unchanged → no re-embed needed.)
+
+## Phase 1.7 COMPLETE — summary
+
+Converged the two RAG paths into one: **single Neon pgvector backend** (Chroma removed), **question embedded once** and shared, **LLM judge** over the shortlist. Plus closed the **Streamlit secrets gap** (shared Neon resolver) that had been silently degrading the cloud matcher to lexical. Headline: paraphrase precision **72.6% → 93.5%**, negatives abstention **5/12 → 12/12**, routing **11/11**, embeddings **2→1 per question**. New files: `app/db/neon.py`, `app/rag/catalog/embed_schema.py`. Deleted: `vector_store.py`, `ingest.py`, `retriever_experimental.py`. Neon: `schema_embeddings` (13 rows) added.
+
+### Docs trued up (pre-commit)
+
+Updated the 5 `docs/` architecture files to the single-backend / embed-once / judge flow:
+- `kpi_processing_flow.md` — rewrote diagram + responsibilities + sequence; "known limitation" → "resolved limitation" (judge).
+- `kpi_processing_flow_future.md` — re-headed **IMPLEMENTED 2026-06-22**; design record + small remaining future ideas (precision ceiling, legacy metric docs, decorative-table lint).
+- `function_call_graph_rag.md` — removed Chroma/ingest subgraphs; added shared resolver (S0), embed-once (S1), pgvector schema retrieval (S3), `embed_schema` build, judge nodes.
+- `module_call_graph.md` — dropped `ingest`/`vector_store`; added `app.db.neon`, `embed_schema`, embed-once, judge.
+- `kpi_catalog_spec.md` — matcher behavior now deterministic-fast-path + LLM judge; Embedding Indexes section covers both tables + the resolver; eval note records 93.5% / 12/12.
+
+Git tracking confirmed: **ClaudeC IS tracked** (gitignore has lowercase `claudec/`, case-sensitive miss). Pre-existing unrelated change `docs/architecture_flow_interactive.html` (modified before this session) — **not** part of Phase 1.7; leave out of the commit. Status: still uncommitted; awaiting user's go on commit message.

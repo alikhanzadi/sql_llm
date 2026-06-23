@@ -663,12 +663,13 @@ def _run_nl_query(question: str) -> dict[str, Any]:
     from app.llm.explain_results import explain_results
     from app.llm.generate_sql import build_sql_planning_context, fix_sql, generate_sql
     from app.rag.context_service import get_retrieval_context
-    from app.rag.ingest import run_ingest
+    from app.rag.embeddings import embed_query_safe
 
-    run_ingest()
-    retrieval_ctx = get_retrieval_context(question)
+    # Embed the question once and share it across schema retrieval and KPI matching.
+    query_embedding = embed_query_safe(question)
+    retrieval_ctx = get_retrieval_context(question, query_embedding=query_embedding)
     context = retrieval_ctx.text
-    planning_context = build_sql_planning_context(question)
+    planning_context = build_sql_planning_context(question, query_embedding=query_embedding)
     sql = generate_sql(question, context, planning_context=planning_context)
 
     if not validate_sql(sql):

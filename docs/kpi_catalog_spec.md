@@ -72,18 +72,20 @@ Execution order:
 
 `match_kpi()` is **embedding-first** with a lexical fallback:
 
-Primary — embedding shortlist:
-1. Embed the question (`text-embedding-3-small`).
+Primary — embedding shortlist + LLM judge:
+1. Embed the question once (`text-embedding-3-small`), shared with schema retrieval.
 2. Retrieve the `KPI_TOPK = 8` nearest KPIs from the Neon `pgvector` `kpi_embeddings`
    table (cosine). Recall@8 ≈ 98% on the held-out paraphrase set.
 3. **Similarity gate** `SIMILARITY_GATE = 0.30`: if the top candidate is below it, return
-   schema-only. (Tuned against `paraphrase_cases.json` / `negative_cases.json`. The gate
-   cleanly rejects out-of-domain questions but cannot separate schema-exploration
-   questions, which overlap the KPI band — an LLM judge over the shortlist with a NONE
-   option is the planned fix.)
-4. Resolve among candidates within `SIMILARITY_MARGIN = 0.03` of the top: specificity
-   tiebreak (longest exact name/alias substring in the question) → revenue-cluster default
-   → otherwise the top candidate.
+   schema-only (tuned against `paraphrase_cases.json` / `negative_cases.json`).
+4. **Deterministic fast-path** — if any candidate's name/alias appears literally in the
+   question (canonical vocabulary), resolve among candidates within `SIMILARITY_MARGIN = 0.03`
+   of the top by specificity (longest exact substring) → revenue-cluster default → otherwise
+   the top candidate. **No LLM call.**
+5. **LLM judge** (`JUDGE_MODEL = gpt-4o-mini`, `JUDGE_TOPK = 5`) — when there is no literal
+   signal (a paraphrase) or the question may be non-KPI, the judge picks one of the top-5 or
+   NONE: `pick` → that KPI; `NONE` → schema-only (this abstains on schema-exploration
+   questions the numeric gate cannot separate); judge unavailable → deterministic winner.
 
 Fallback — lexical (`_lexical_match_kpi`, used when OpenAI/Neon are unavailable):
 - Token-overlap scoring with `MATCH_THRESHOLD = 0.58`, `AMBIGUOUS_MARGIN = 0.03`, and the
@@ -99,12 +101,18 @@ Routing outcomes:
 - **Matched + active** -> inject KPI context (`definition`, joins, recipe, `value_basis`, `raw_sql`).
 - **Matched + blocked** -> return safe explanatory SQL row (`blocked_kpi_message`) instead of fabricated KPI SQL.
 
-## KPI Embedding Index
-- Table: Neon `kpi_embeddings(kpi_id, section, model, embedding vector(1536), embed_text, content_hash, updated_at)`.
-- Build: `app/rag/catalog/embed_kpis.py` composes `embed_text` (name + definition + aliases +
-  example_questions) per KPI, embeds with `text-embedding-3-small`, and upserts (hash-gated,
-  so only changed KPIs are re-embedded). Re-run after catalog edits.
-- Persistent (survives Streamlit Cloud restarts), unlike a local Chroma store.
+## Embedding Indexes (Neon pgvector — single backend)
+- `kpi_embeddings(kpi_id, section, model, embedding vector(1536), embed_text, content_hash, updated_at)`
+  — KPI routing index. Build: `app/rag/catalog/embed_kpis.py` (`embed_text` = name +
+  definition + aliases + example_questions per KPI, hash-gated). Re-run after catalog edits.
+- `schema_embeddings(table_name, model, embedding vector(1536), embed_text, content_hash, updated_at)`
+  — schema-grounding index (the 13 table docs). Build: `app/rag/catalog/embed_schema.py`
+  (`embed_text` = the formatted table block, hash-gated). Re-run after schema-doc edits.
+- Connection: `app/db/neon.py` resolves `DATABASE_URL` → else `st.secrets["postgres_neon"]`,
+  so the matcher and schema retrieval work in CLI and on Streamlit Cloud (this closed a gap
+  where the cloud matcher silently fell back to lexical).
+- Persistent (survives Streamlit Cloud restarts), unlike the former local Chroma store
+  (removed in Phase 1.7).
 
 ## Current Catalog Snapshot
 Based on current `kpi_catalog.json` (version 2.0.0):
@@ -120,8 +128,9 @@ Based on current `kpi_catalog.json` (version 2.0.0):
   required tables/joins/filters/aggregation per KPI (runs the real pipeline).
 - `app/eval/run_paraphrase_eval.py` (+ `paraphrase_cases.json`, `negative_cases.json`) —
   held-out matcher precision on paraphrases and abstention on non-KPI questions
-  (`--negatives`). Note: the embedding path requires OpenAI + Neon, so run it with the
-  project venv; the bare-env run exercises the lexical fallback.
+  (`--negatives`). Current: precision **93.5%** (with the LLM judge; was 72.6% deterministic-only)
+  and negatives abstention **12/12**. Note: the embedding + judge path requires OpenAI + Neon,
+  so run it with the project venv; the bare-env run exercises the lexical fallback.
 
 To add a planner routing case: add `{id, question, expected_intent, expected_time_grain,
 expected_kpi_id (null for fallback), optional expected_kpi_status}` and run the runner.

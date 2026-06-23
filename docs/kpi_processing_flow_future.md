@@ -1,61 +1,29 @@
-# KPI Processing Flow — Future (Phase 1.7 unification)
+# KPI Processing Flow — Phase 1.7 (IMPLEMENTED 2026-06-22)
 
-> The embedding-shortlist matcher is now implemented (see `kpi_processing_flow.md`). This
-> doc captures the remaining convergence work: one question embedding shared across both
-> retrieval paths, a single persistent vector backend, and an optional LLM judge over the
-> shortlist to fix the abstention/precision ceiling.
+> **Status: DELIVERED.** The convergence work described here is implemented. The current,
+> authoritative flow is `kpi_processing_flow.md`. This file is kept as the design record and
+> a list of remaining (smaller) future ideas.
 
-## Why
-Today there are two retrieval paths with two issues:
-- **Two embedding calls per question** — `retriever.py` (schema) and `kpi_matcher.py` (KPI)
-  each embed the same question with the same model.
-- **Two backends** — schema docs live in Chroma (ephemeral; re-embedded on Streamlit cold
-  start), KPI vectors live in Neon `pgvector` (persistent). Inconsistent persistence.
-- **Gate cannot abstain on schema-exploration** — those questions overlap the KPI band, so
-  the numeric similarity gate alone leaks them into a KPI match.
+## What was delivered
+1. **Embed the question once** and share it across schema retrieval and KPI matching
+   (`embed_query` / `embed_query_safe`; threaded as a `query_embedding` through
+   `get_retrieval_context`, `retrieve_relevant_docs`, `match_kpi`, `build_sql_planning_context`).
+   Embedding calls per question: **2 → 1**.
+2. **Single backend** — schema docs migrated to Neon `pgvector` (`schema_embeddings`, built by
+   `embed_schema.py`). **Chroma removed entirely** (`vector_store.py`, `ingest.py`,
+   `retriever_experimental.py` deleted; `chromadb` dropped; no more Streamlit cold-start re-embed).
+3. **LLM judge over the shortlist** — `gpt-4o-mini` picks one of the top-5 or NONE, fired only
+   when there is no literal name/alias signal (ambiguous-only). Closes both gaps the numeric
+   gate could not: precision **72.6% → 93.5%** and schema-exploration abstention **5/12 → 12/12**.
 
-```mermaid
-flowchart TD
-    A[User NL Question] --> Z[embed question ONCE<br/>text-embedding-3-small]
+Also delivered (prerequisite): **shared Neon resolver** `app/db/neon.py` resolving
+`DATABASE_URL` → `st.secrets["postgres_neon"]`, which closed a Streamlit Cloud gap where the
+matcher silently fell back to lexical (~4.8%) because `DATABASE_URL` was not in `os.environ`.
 
-    Z --> S[(Neon pgvector<br/>schema_docs kNN)]
-    Z --> KP[(Neon pgvector<br/>kpi_embeddings kNN)]
-
-    S --> D[Schema Context Block]
-
-    A --> E[planner.plan_query]
-    E --> F[QueryPlan]
-    KP --> V[Top-k KPI candidates]
-    F --> W[deterministic resolver<br/>gate · specificity · cluster default · guardrail]
-    V --> W
-    W --> JU{confident?}
-    JU -- ambiguous / maybe-none --> LJ[LLM judge over top-5<br/>pick one or NONE]
-    JU -- clear --> J[KPI decision]
-    LJ --> J
-
-    J -- none --> K[Schema-only prompt]
-    J -- active --> L[Inject Canonical KPI Context]
-    D --> K
-    D --> L
-    L --> N[prompts.compose_sql_user_prompt]
-    K --> N
-    N --> O[generate_sql LLM]
-    O --> P[SQL output]
-```
-
-## Target changes
-1. **Embed the question once** and share the vector between schema retrieval and KPI
-   matching (removes the duplicate embedding call). Requires threading the embedding through
-   the orchestration (`generate_sql` / `main` / `ui`).
-2. **Single backend** — migrate `schema_docs` embeddings into Neon `pgvector` alongside
-   `kpi_embeddings`. Removes Chroma and the Streamlit cold-start re-embed entirely; one
-   persistent store, one ops story.
-3. **LLM judge over the shortlist** — when the embedding shortlist is ambiguous or possibly
-   non-KPI, ask the model to pick one of the top-5 or NONE. This closes both gaps the gate
-   cannot: the 73% → ~97% precision ceiling (recall@5 = 97%) and abstention on
-   schema-exploration questions that overlap the KPI band. Cost: one cheap call per
-   ambiguous question.
-
-## Not in scope here
-- Downstream prompt/recipe injection and the blocked-KPI route are unchanged.
-- `KpiMatchDecision` stays the same, so `generate_sql`/`ui` interfaces are unaffected.
+## Remaining future ideas (not in scope of Phase 1.7)
+- **Precision ceiling**: 4 paraphrase misses remain (3 genuine near-synonyms; 1 outside top-5).
+  Raising `JUDGE_TOPK` or improving `embed_text` could lift the recall@k ceiling.
+- **Legacy metric docs**: the 30 metric docs in `schema_docs` predate the 62-KPI canonical
+  catalog and are still matched lexically; review whether to retire/fold/embed them.
+- **Catalog→eval coupling**: optionally fold an `issuers`-style "decorative table" lint into the
+  catalog validator so recipe/required_tables drift is caught without an LLM eval run.
