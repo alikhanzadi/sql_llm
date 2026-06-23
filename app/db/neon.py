@@ -48,6 +48,45 @@ def get_neon_dsn() -> Optional[str]:
     return None
 
 
+def get_neon_conn_kwargs() -> Optional[dict]:
+    """Return Neon connection components {host, port, database, user, password}, or None.
+
+    Resolves from `DATABASE_URL` (parsed) or `st.secrets["postgres_neon"]`. Used by the
+    query-execution client (`PostgresClient`) so cloud SQL execution works in CLI and on
+    Streamlit Cloud — the same Neon the pgvector indexes live in.
+    """
+    url = os.getenv("DATABASE_URL")
+    if url:
+        from urllib.parse import unquote, urlparse
+
+        u = urlparse(url)
+        if u.hostname:
+            return {
+                "host": u.hostname,
+                "port": u.port or 5432,
+                "database": (u.path or "").lstrip("/") or None,
+                "user": unquote(u.username) if u.username else None,
+                "password": unquote(u.password) if u.password else None,
+            }
+
+    try:
+        import streamlit as st
+
+        if "postgres_neon" in st.secrets:
+            c = st.secrets["postgres_neon"]
+            return {
+                "host": c["host"],
+                "port": c["port"],
+                "database": c["database"],
+                "user": c["user"],
+                "password": c["password"],
+            }
+    except Exception:
+        pass
+
+    return None
+
+
 def get_neon_conn(statement_timeout_ms: int = 10000):
     """Return a cached read-only Neon connection for pgvector reads, or None if unavailable.
 

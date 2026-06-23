@@ -1,5 +1,11 @@
 # Canonical KPI Overview
 
+> **🗄️ ARCHIVED (2026-06-23) — merged into `docs/kpi_canonical_list.md`.** The executive-question
+> framing, the optional-accelerator intro, and the data-caveats summary that used to live here now
+> live in the canonical list. The per-KPI "what it answers" notes were redundant with that file's
+> `Definition`/`Notes` fields. Use `docs/kpi_canonical_list.md` (hand source of truth) and
+> `docs/kpi_inventory_grouped_by_section.md` (auto-generated mirror) instead.
+
 > **Reader companion — NOT the source of truth.** This is a hand-maintained, human-readable view of the canonical KPI set. The authoritative, catalog-mappable definitions live in **`kpi_canonical_list.md`**, and the runtime truth is **`app/rag/catalog/kpi_catalog.json`**. On any conflict, those win. The mechanically generated inventory (grouped by the catalog's `section` field) is **`kpi_inventory_grouped_by_section.md`**; this overview stays hand-written so it can carry the narrative "what it answers / notes" context that the catalog does not encode.
 >
 > Scope: **62 active KPIs**, the full north star active set. The catalog is **flat — there are no tiers.** Blocked KPIs are omitted for now.

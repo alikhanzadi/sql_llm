@@ -142,11 +142,13 @@ Current coverage:
 | Metric Source | Count |
 | --- | ---: |
 | Schema metric docs | 30 |
-| Canonical KPIs | 28 |
-| Active canonical KPIs | 22 |
-| Blocked canonical KPIs | 6 |
+| Canonical KPIs | 62 |
+| Active canonical KPIs | 62 |
+| Blocked canonical KPIs | 0 |
 
-Blocked KPIs are explicit. The app should not generate fabricated SQL for them; it should show missing dependencies from the KPI catalog.
+The catalog is currently the full north star active set (62 KPIs, all `active`, no tiers). The
+blocked-KPI path still exists in code: if a KPI is ever marked `blocked_by_missing_data`, the app
+must not generate fabricated SQL for it — it returns the catalog's missing-dependency message instead.
 
 ## Query and Chat Behavior
 
@@ -154,10 +156,10 @@ The `Ask the Data` tab uses this runtime path:
 
 ```text
 Question
-  -> schema ingestion check
-  -> schema and metric retrieval
+  -> embed question once (text-embedding-3-small)
+  -> schema retrieval from Neon pgvector (shared embedding)
   -> deterministic query planning
-  -> KPI matching
+  -> KPI matching (embedding shortlist + LLM judge, shared embedding)
   -> SQL generation
   -> SELECT-only validation
   -> PostgreSQL execution

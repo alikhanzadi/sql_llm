@@ -1,5 +1,11 @@
 # Retrieval Test Checklist
 
+> **🗄️ ARCHIVED (2026-06-23) — superseded by the automated eval suite.** Routing/retrieval
+> regression is now covered by `app/eval/run_sql_correctness_eval.py`, `app/eval/run_paraphrase_eval.py`
+> (+ `paraphrase_cases.json`, `negative_cases.json`), and `app/eval/run_planner_kpi_eval.py`. Also note
+> the "Blocked KPI route" case below is no longer valid — the catalog currently has **0 blocked KPIs**
+> (62/62 active). Kept only as a manual smoke-test reference.
+
 Use this checklist to validate retrieval and routing behavior before changing retriever logic.
 
 ## How To Run

@@ -458,4 +458,27 @@ Updated the 5 `docs/` architecture files to the single-backend / embed-once / ju
 - `module_call_graph.md` — dropped `ingest`/`vector_store`; added `app.db.neon`, `embed_schema`, embed-once, judge.
 - `kpi_catalog_spec.md` — matcher behavior now deterministic-fast-path + LLM judge; Embedding Indexes section covers both tables + the resolver; eval note records 93.5% / 12/12.
 
-Git tracking confirmed: **ClaudeC IS tracked** (gitignore has lowercase `claudec/`, case-sensitive miss). Pre-existing unrelated change `docs/architecture_flow_interactive.html` (modified before this session) — **not** part of Phase 1.7; leave out of the commit. Status: still uncommitted; awaiting user's go on commit message.
+Git tracking confirmed: **ClaudeC IS tracked** (gitignore has lowercase `claudec/`, case-sensitive miss). Pre-existing unrelated change `docs/architecture_flow_interactive.html` (modified before this session) — **not** part of Phase 1.7; left out of the commit.
+
+**Committed + pushed: `f6ca4e8` "Converge RAG paths: single pgvector backend, embed-once, LLM judge"** (23 files, +954/-644). Branch `codex14-v3` = `origin/codex14-v3` = `f6ca4e8`. Working tree clean except the pre-existing `architecture_flow_interactive.html`.
+
+### RESUME HERE (after Phase 1.7)
+
+**State:** Phase 1 + 1.6 + **1.7 complete, committed & pushed** (`f6ca4e8`). Single Neon pgvector backend, embed-once, ambiguous-only LLM judge. Paraphrase 93.5%, negatives 12/12, routing 11/11, SQL-correctness 62/62.
+**Neon tables:** `kpi_embeddings` (62), `schema_embeddings` (13). Re-run `embed_kpis.py` / `embed_schema.py` (hash-gated) after catalog / schema-doc edits.
+**Next options:** Phase 2 (conversational chat — T2.1–T2.5) or Phase 3 (hardening). Smaller follow-ups noted in `kpi_processing_flow_future.md` (precision ceiling, legacy 30 metric docs review, decorative-table catalog lint).
+
+## 2026-06-23: All-cloud databases (Neon for SQL execution + vector)
+
+Context: the pgvector indexes were already on Neon, but **SQL execution** ran against **local** Postgres (`DB_ENV=local`; `POSTGRES_*` = localhost, schema `athl_v2`). User: make everything cloud (SQL + vector).
+
+Finding: setting `DB_ENV=prod` alone was **not** enough — `PostgresClient`'s CLI fallback hardcoded `POSTGRES_*` (localhost), so a CLI prod run would still hit local. (Streamlit-cloud prod already worked via `st.secrets["postgres_neon"]`.)
+
+Changes:
+- `app/db/neon.py`: added `get_neon_conn_kwargs()` — parses `DATABASE_URL` (or `st.secrets["postgres_neon"]`) into `{host, port, database, user, password}`.
+- `app/db/query_runner.py`: `PostgresClient` now, when no Streamlit secrets (CLI/scripts), resolves by `DB_ENV` — **prod → Neon** via `get_neon_conn_kwargs()`; local → `POSTGRES_*`. Streamlit-secrets branch unchanged. **Non-breaking** (local mode still works). prod already skips the `athl_v2` search_path, so Neon's `public` schema is used.
+- `.env`: `DB_ENV=local` → `prod` (local config; `.env` is gitignored, not committed).
+
+Verified: `PostgresClient` → `current_database()=neondb`, `current_schema()=public`, `db_env=prod`. `main.py` end-to-end: "How many completed transactions?" → **81,844** (matches Part F F1). Embedding/pgvector paths unchanged (always Neon). Confirmed dead `get_schema()` has no callers (its hardcoded `athl_v2` is irrelevant). Executive dashboard still reads static CSVs (separate from the agent DB path; unchanged).
+
+For deploys: set `DB_ENV=prod` (Streamlit secrets template already recommends it) + provide `[postgres_neon]` / `DATABASE_URL`. Code change is committable; `.env` is not.

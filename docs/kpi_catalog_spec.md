@@ -44,12 +44,12 @@ Each KPI record in `kpis` must include:
 Field notes:
 - `section` ∈ `{A, B, C, D, E}` — the north star executive section. This is the
   **authoritative grouping** consumed by `generate_kpi_docs.py`; `kpi_canonical_list.md`
-  and `kpi_canonical_overview.md` must agree with it.
+  must agree with it.
 - `category` is an orthogonal tag that drives runtime rules: `finance` requires a
   `value_basis`; `leaderboard` activates the ranking guardrail. It is **not** the
   section and must not be used for grouping.
 - `value_basis` ∈ `{token_revenue_gross, issuer_net, platform_fee}` — prevents
-  gross/net/fee revenue confusion. See the revenue family in `kpi_canonical_overview.md`.
+  gross/net/fee revenue confusion. See the revenue family in `kpi_canonical_list.md`.
 
 ## Validation Rules
 Implemented in `app/rag/catalog/kpi_catalog.py`:
@@ -138,8 +138,8 @@ expected_kpi_id (null for fallback), optional expected_kpi_status}` and run the 
 ## Doc Generation (anti-drift)
 - `app/rag/catalog/generate_kpi_docs.py` renders `docs/kpi_inventory_grouped_by_section.md`
   from the catalog, grouped by the `section` field. Re-run after any catalog edit.
-- `kpi_canonical_list.md` (source of truth) and `kpi_canonical_overview.md` (reader
-  companion, hand-maintained) must agree with the catalog's `section` assignments.
+- `kpi_canonical_list.md` (hand-maintained source of truth) must agree with the catalog's
+  `section` assignments.
 
 ## Versioning
 - Treat this file as behavioral spec.

@@ -4,7 +4,7 @@ This high-level diagram shows runtime module dependencies in a layered vertical 
 
 ```mermaid
 flowchart TB
-  E0["Entry Layer (app.ui)"] --> O0["Orchestration Layer"]
+  E0["Entry Layer (app.ui / app.ui_chat)"] --> O0["Orchestration Layer"]
   O0 --> R0["RAG Layer"]
   O0 --> L0["LLM Layer"]
   O0 --> D0["DB Layer"]
@@ -51,7 +51,9 @@ flowchart TB
 ## Notes
 
 - Scope: runtime-oriented module dependencies from `app/**/*.py`.
-- Entry layer in this v2 runtime view is the Streamlit app (`app.ui`).
+- Entry layer in this v2 runtime view is the Streamlit app (`app.ui`). `app.ui_chat` is a thin
+  chat-only shell that imports `app.ui` and reuses its chat code, so it shares the same orchestration.
+  The CLI (`app.main`) is the non-Streamlit entry over the same orchestration.
 - Arrow meaning: left module calls/imports and depends on right module.
 - **Single Neon `pgvector` backend** for both RAG paths: `retriever -> schema_embeddings`
   (schema grounding) and `kpi_matcher -> kpi_embeddings` (KPI routing). Both go through the

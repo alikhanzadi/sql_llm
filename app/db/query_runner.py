@@ -35,6 +35,7 @@ class PostgresClient:
         # Decide environment (local vs prod)
         self.db_env = os.getenv("DB_ENV", "local").lower()
 
+        creds = None
         try:
             if self.db_env == "prod" and "postgres_neon" in st.secrets:
                 creds = st.secrets["postgres_neon"]
@@ -45,14 +46,27 @@ class PostgresClient:
             else:
                 creds = st.secrets["postgres_local"]
         except Exception:
-            # fallback for local CLI runs
-            creds = {
-                "host": os.getenv("POSTGRES_HOST"),
-                "port": os.getenv("POSTGRES_PORT"),
-                "database": os.getenv("POSTGRES_DB"),
-                "user": os.getenv("POSTGRES_USER"),
-                "password": os.getenv("POSTGRES_PASSWORD"),
-            }
+            creds = None
+
+        if creds is None:
+            # No Streamlit secrets (CLI / scripts). Resolve from env by DB_ENV.
+            if self.db_env == "prod":
+                from app.db.neon import get_neon_conn_kwargs
+
+                creds = get_neon_conn_kwargs()
+                if creds is None:
+                    raise RuntimeError(
+                        "DB_ENV=prod but no Neon credentials found "
+                        "(set DATABASE_URL or st.secrets['postgres_neon'])."
+                    )
+            else:
+                creds = {
+                    "host": os.getenv("POSTGRES_HOST"),
+                    "port": os.getenv("POSTGRES_PORT"),
+                    "database": os.getenv("POSTGRES_DB"),
+                    "user": os.getenv("POSTGRES_USER"),
+                    "password": os.getenv("POSTGRES_PASSWORD"),
+                }
         # # 1. Get the credentials (wherever they are)
         # creds = st.secrets["postgres"]
 

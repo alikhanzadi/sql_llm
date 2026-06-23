@@ -682,3 +682,39 @@ OK: 62 KPIs loaded, version 2.0.0
 $ ./codex14-venv/bin/python app/eval/run_sql_correctness_eval.py --kpi revenue_concentration
 PASS [D] revenue_concentration   Core pass: 1/1
 # Full SQL-correctness now 62/62 (61 others passed in the full run; isolated one-KPI fix).
+
+=== Docs trued up + commit/push Phase 1.7 ===
+
+# Updated 5 docs/: kpi_processing_flow(.md/_future.md), function_call_graph_rag.md,
+#   module_call_graph.md, kpi_catalog_spec.md -> single backend / embed-once / judge.
+
+$ git add -A app/ requirements.txt ClaudeC/ docs/{kpi_processing_flow,kpi_processing_flow_future,function_call_graph_rag,module_call_graph,kpi_catalog_spec}.md
+# (architecture_flow_interactive.html deliberately NOT staged — pre-existing unrelated change)
+$ git commit -F <msg>
+[codex14-v3 f6ca4e8] Converge RAG paths: single pgvector backend, embed-once, LLM judge
+ 23 files changed, 954 insertions(+), 644 deletions(-)
+$ git push
+   7e67582..f6ca4e8  codex14-v3 -> codex14-v3
+[exit 0]
+# Phase 1.7 committed + pushed. Working tree clean except pre-existing
+# docs/architecture_flow_interactive.html (unrelated, left uncommitted).
+
+Command log continued: 2026-06-23 — All-cloud DBs (Neon for SQL execution + vector)
+
+# vector already Neon; SQL execution was local (DB_ENV=local, POSTGRES_*=localhost).
+# Setting DB_ENV=prod alone insufficient: PostgresClient CLI fallback hardcoded POSTGRES_*.
+
+# app/db/neon.py: + get_neon_conn_kwargs()  (parse DATABASE_URL or st.secrets[postgres_neon])
+# app/db/query_runner.py: PostgresClient CLI fallback now DB_ENV-aware (prod->Neon, local->POSTGRES_*)
+$ sed -i '' 's/^DB_ENV=local$/DB_ENV=prod/' .env
+
+$ ./codex14-venv/bin/python -c "PostgresClient target check"
+db_env: prod
+execution target: db=neondb  server schema=public
+[exit 0]
+
+$ echo "How many completed transactions are there?" | ./codex14-venv/bin/python -m app.main
+SQL: SELECT COUNT(transaction_id) ... WHERE lower(status)='completed'
+Result: total_transactions = 81844   # matches Part F F1 (Neon) -> executing on cloud
+[exit 0]
+# All-cloud confirmed. Local mode preserved (non-breaking). .env is gitignored (not committed).

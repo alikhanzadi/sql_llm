@@ -3,12 +3,28 @@
 ## Selection Notes
 - **Canonical set = the full north star *active* KPI set** (`athl_north_star_executive_dashboard_kpis.md`). Every entry here gets a row in `app/rag/catalog/kpi_catalog.json`.
 - **No tiers.** The catalog is flat. Matcher priority among look-alike metrics is handled by deliberate aliases/examples and per-cluster default-resolution (Claude Code), not by a tier field.
-- **Precedence.** This file is authoritative for KPI selection, definitions, and sizing. It **supersedes the sizing and tiering** in `implementation_scope.md` (whose architecture remains current but predates the north star). The JSON catalog is generated from / linted against this file.
+- **Precedence.** This file is authoritative for KPI selection, definitions, and sizing. It **supersedes the sizing and tiering** in the archived `docs/archive/implementation_scope.md` (whose architecture rationale remains historically accurate but predates the north star). The JSON catalog is generated from / linted against this file.
 - **`status`** is the only status distinction: `active` here; blocked KPIs are tracked separately and omitted from this list for now.
 - **`value_basis`** is required on every revenue KPI to prevent gross/net confusion (see Revenue Family below).
 - Validated against `athl_raw_tables_postgres.sql` (schema) and `generate_and_load_data_neon.ipynb` (data semantics).
 - Runtime uses the JSON catalog only; this file is the human-mappable source of truth that the JSON is generated from / linted against.
 - Format per block mirrors the JSON: `kpi_id`, Definition, Core tables, Dimensions, (Value basis), (Notes).
+
+---
+
+## How to read this
+
+The KPI layer is an **optional accelerator** over deterministic schema grounding: canonical KPIs give the executive view *one* blessed definition and keep the agent's answers consistent with the dashboard. The five sections below map to the north star's five executive questions:
+
+| Section | Executive question |
+|---|---|
+| A. Marketplace Health & Liquidity | Is liquidity and trading activity healthy? |
+| B. User Growth & Engagement | Is the platform growing? |
+| C. Issuer Ecosystem Health | Are issuers succeeding? |
+| D. Financial & Business | Is the ecosystem financially sustainable? |
+| E. Compliance, Trust & Risk | Are trust, compliance, and activation improving? |
+
+Disambiguation among look-alike metrics is deterministic (deliberate aliases + per-cluster defaults), so a single-turn question resolves without a clarifying question.
 
 ---
 
@@ -341,9 +357,16 @@ All platform revenue derives from one base: **`SUM(transactions.total_amount_usd
 
 ---
 
+## Known Data Caveats (current dummy data)
+
+A `0` or flat reading on these is **correct**, not a bug — the generator simply has no variation yet: `mfa_adoption_rate` (0%), `suspended_accounts` (0), `failed_reversed_transactions` (0), `secondary_market_share` (0%), and anything using `current_supply_minted` (always 0). Also: `creator_profile` is empty (the profile-completion KPI is athlete-only), `seller_id` is the issuer's user on every primary sale, and `issuers.status` uses `PASSED/PENDING/FAILED`.
+
+---
+
 ## Source Anchors
 - Primary source of truth: `athl_north_star_executive_dashboard_kpis.md` (active set).
 - Schema: `athl_raw_tables_postgres.sql`.
 - Data semantics: `generate_and_load_data_neon.ipynb`.
 - Runtime catalog: `app/rag/catalog/kpi_catalog.json` (validated by `kpi_catalog.py`).
-- Reader companion (non-authoritative): `kpi_canonical_overview.md`.
+- Mechanically generated inventory (grouped by `section`): `kpi_inventory_grouped_by_section.md`.
+- This file absorbed the former `kpi_canonical_overview.md` reader companion (now `docs/archive/`).
